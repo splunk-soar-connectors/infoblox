@@ -207,7 +207,7 @@ class InfobloxddiConnector(BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _make_rest_call(self, endpoint, action_result, params=None, data=None, method="post"):
+    def _make_rest_call(self, endpoint, action_result, params=None, data=None, method="post", timeout=None):
         """ Function that makes the REST call to the device. It's a generic function that can be called from various
         action handlers.
 
@@ -216,6 +216,7 @@ class InfobloxddiConnector(BaseConnector):
         :param params: request parameters if method is GET
         :param data: request body if method is POST
         :param method: GET/POST/PUT/DELETE (Default method will be "POST")
+        :param timeout: request timeout in seconds
         :return: status (success/failure) (along with appropriate message), response obtained by making an API call
         """
 
@@ -239,8 +240,14 @@ class InfobloxddiConnector(BaseConnector):
 
         # Make the call
         try:
-            request_obj = request_func("{}{}{}".format(self._url, consts.INFOBLOX_BASE_ENDPOINT, endpoint),
-                                       auth=credential_data, params=params, data=data, verify=self._verify_server_cert)
+            if timeout is not None:
+                request_obj = request_func("{}{}{}".format(self._url, consts.INFOBLOX_BASE_ENDPOINT, endpoint),
+                                           auth=credential_data, params=params, data=data, timeout=timeout,
+                                           verify=self._verify_server_cert)
+            else:
+                request_obj = request_func("{}{}{}".format(self._url, consts.INFOBLOX_BASE_ENDPOINT, endpoint),
+                                           auth=credential_data, params=params, data=data,
+                                           verify=self._verify_server_cert)
 
             # store the r_text in debug data, it will get dumped in the logs if an error occurs
             if hasattr(action_result, 'add_debug_data'):
@@ -332,7 +339,7 @@ class InfobloxddiConnector(BaseConnector):
         self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MSG.format(endpoint=consts.INFOBLOX_LEASE))
 
         # Querying endpoint to check connection to device
-        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, method="get")
+        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, method="get", timeout=30)
 
         if phantom.is_fail(status):
             self.save_progress(action_result.get_message())
@@ -401,6 +408,38 @@ class InfobloxddiConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _list_network_view(self, param):
+        """ Get list of network view from infobloxddi.
+
+        :param param: dictionary of input parameter
+        :return: status (success/failure)
+        """
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+        summary_data = action_result.update_summary({})
+
+        # Make call to obtain list of network view
+        status, response = self._make_rest_call(consts.INFOBLOX_NETWORK_VIEW, action_result, method="get")
+
+        # Something went wrong
+        if phantom.is_fail(status):
+            return action_result.get_status()
+
+        response_list = response[consts.INFOBLOX_RESPONSE_DATA]
+
+        # If network view information is unavailable
+        if not response_list:
+            self.debug_print(consts.INFOBLOX_NETWORK_VIEW_INFO_UNAVAILABLE)
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_NETWORK_VIEW_INFO_UNAVAILABLE)
+
+        for data in response_list:
+            action_result.add_data(data)
+
+        # Update summary data
+        summary_data["total_network_view"] = len(response_list)
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def _block_domain(self, param):
         """ Function to add entry of domain to provided Response Policy Zone in a blocked state.
 
@@ -411,14 +450,19 @@ class InfobloxddiConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         # Mandatory parameters
-        domain_name = param[consts.INFOBLOX_JSON_DOMAIN].decode('utf-8').encode('idna')
+        domain_name = param[consts.INFOBLOX_JSON_DOMAIN]
+        # Convert URL to domain
+        if phantom.is_url(domain_name):
+            domain_name = phantom.get_host_from_url(domain_name)
+
+        domain = domain_name.decode('utf-8').encode('idna')
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameters
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
         comment = param.get(consts.INFOBLOX_JSON_COMMENT)
 
-        rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain_name, rp_zone=rp_zone)
+        rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain, rp_zone=rp_zone)
 
         self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
 
@@ -626,13 +670,19 @@ class InfobloxddiConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         # Mandatory parameters
-        domain_name = param[consts.INFOBLOX_JSON_DOMAIN].decode('utf-8').encode('idna')
+        domain_name = param[consts.INFOBLOX_JSON_DOMAIN]
+        # Convert URL to domain
+        if phantom.is_url(domain_name):
+            domain_name = phantom.get_host_from_url(domain_name)
+
+        domain = domain_name.decode('utf-8').encode('idna')
+
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameter
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
-        rpz_rule_name = "{domain}.{rpz}".format(domain=domain_name, rpz=rp_zone)
+        rpz_rule_name = "{domain}.{rpz}".format(domain=domain, rpz=rp_zone)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -712,6 +762,61 @@ class InfobloxddiConnector(BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _list_hosts(self, param):
+        """ List hosts managed/added by infobloxddi.
+
+        :param param: dictionary of input parameters
+        :return: list of hosts
+        """
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+        summary_data = action_result.update_summary({})
+
+        ipv4_hosts_param = {consts.INFOBLOX_JSON_RETURN_FIELDS: "ipv4addr,name,view,zone"}
+
+        # Getting list of ipv4 hosts
+        ipv4_hosts_status, ipv4_hosts = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT, action_result,
+                                                             params=ipv4_hosts_param, method="get")
+
+        # Something went wrong while getting rp_zone details
+        if phantom.is_fail(ipv4_hosts_status):
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
+            return action_result.get_status()
+
+        # Loop through all the hosts and add to action_result
+        for ipv4_host in ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]:
+            # Post processing the output, to change ipv4addr key to ip
+            ipv4_host['ip'] = ipv4_host.pop('ipv4addr')
+            zone = '.{}'.format(ipv4_host['zone'])
+            if ipv4_host['name'].endswith(zone):
+                ipv4_host['name'] = ipv4_host['name'][:-len(zone)]
+            action_result.add_data(ipv4_host)
+
+        # Getting list of ipv6 hosts
+        ipv6_hosts_param = {consts.INFOBLOX_JSON_RETURN_FIELDS: "ipv6addr,name,view,zone"}
+
+        ipv6_hosts_status, ipv6_hosts = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv6_ENDPOINT, action_result,
+                                                             params=ipv6_hosts_param, method="get")
+
+        # Something went wrong while getting rp_zone details
+        if phantom.is_fail(ipv6_hosts_status):
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
+            return action_result.get_status()
+
+        # Loop through all the hosts and add to action_result
+        for ipv6_host in ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA]:
+            # Post processing the output, to change ipv4addr key to ip
+            ipv6_host['ip'] = ipv6_host.pop('ipv6addr')
+            zone = '.{}'.format(ipv6_host['zone'])
+            if ipv6_host['name'].endswith(zone):
+                ipv6_host['name'] = ipv6_host['name'][:-len(zone)]
+            action_result.add_data(ipv6_host)
+
+        summary_data[consts.INFOBLOX_TOTAL_HOSTS] = len(ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]) + \
+                                                    len(ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA])
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def handle_action(self, param):
         """ This function gets current action identifier and calls member function of its own to handle the action.
 
@@ -727,7 +832,9 @@ class InfobloxddiConnector(BaseConnector):
             "block_ip": self._block_ip,
             "unblock_ip": self._unblock_ip,
             "unblock_domain": self._unblock_domain,
-            "list_rpz": self._list_rpz
+            "list_rpz": self._list_rpz,
+            "list_hosts": self._list_hosts,
+            "list_network_view": self._list_network_view
         }
 
         action = self.get_action_identifier()

@@ -52,6 +52,63 @@
       "versions": "EQ(*)"
     },
     {
+      "action": "list network view",
+      "description": "List network view",
+      "type": "investigate",
+      "identifier": "list_network_view",
+      "read_only": true,
+      "parameters": {},
+      "render": {
+        "width": 12,
+        "height": 5,
+        "type": "table",
+        "title": "List Network View"
+      },
+      "output": [
+        {
+          "data_path": "action_result.data.*._ref",
+          "data_type": "string"
+        },
+        {
+          "column_name": "Default",
+          "column_order": 1,
+          "data_path": "action_result.data.*.is_default",
+          "data_type": "boolean"
+        },
+        {
+          "column_name": "Network View",
+          "column_order": 0,
+          "data_path": "action_result.data.*.name",
+          "data_type": "string",
+          "contains": [
+            "infoblox view"
+          ]
+        },
+        {
+          "data_path": "action_result.status",
+          "data_type": "string"
+        },
+        {
+          "data_path": "action_result.message",
+          "data_type": "string"
+        },
+        {
+          "data_path": "action_result.summary.total_network_view",
+          "data_type": "numeric"
+        },
+        {
+          "data_path": "summary.total_objects",
+          "data_type": "numeric"
+        },
+        {
+          "data_path": "summary.total_objects_successful",
+          "data_type": "numeric"
+        }
+      ],
+      "versions": "EQ(*)"
+
+    },
+    {
       "action": "get host info",
       "description": "Get information about host",
       "verbose": "Default value for <b>network_view</b> is 'default'.",
@@ -71,7 +128,6 @@
         },
         "network_view": {
           "default": "default",
-          "primary": true,
           "description": "Network view",
           "data_type": "string",
           "contains": [
@@ -118,9 +174,7 @@
           "data_type": "string",
           "contains": [
             "ip"
-          ],
-          "column_name": "Address",
-          "column_order": 0
+          ]
         },
         {
           "data_path": "action_result.data.*.network",
@@ -133,9 +187,7 @@
           "data_type": "string",
           "contains": [
             "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 8
+          ]
         },
         {
           "data_path": "action_result.data.*.hardware",
@@ -266,14 +318,18 @@
           "data_type": "string",
           "contains": [
             "ip", "host name"
-          ]
+          ],
+          "column_name": "Address",
+          "column_order": 0
         },
         {
           "data_path": "action_result.parameter.network_view",
           "data_type": "string",
           "contains": [
             "infoblox view"
-          ]
+          ],
+          "column_name": "Network View",
+          "column_order": 8
         },
         {
           "data_path": "action_result.summary.mac_address",
@@ -285,7 +341,7 @@
         },
         {
           "data_path": "action_result.summary.never_ends",
-          "data_type": "string"
+          "data_type": "boolean"
         },
         {
           "data_path": "summary.total_objects",
@@ -301,7 +357,7 @@
     {
       "action": "unblock ip",
       "description": "Unblock IP",
-      "verbose": "This action uses multistep approach to unblock IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)', if not, action will fail.</li><li>Remove the RPZ rule 'Block IP Address (No Such Domain) Rule' with the specified IP address.</ul>Default value for <b>network_view</b> is 'default'.",
+      "verbose": "This action uses multistep approach to unblock IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address.</ul>Default value for <b>network_view</b> is 'default'.",
       "type": "correct",
       "identifier": "unblock_ip",
       "read_only": false,
@@ -316,8 +372,7 @@
         },
         "rp_zone": {
           "required": true,
-          "primary": true,
-          "description": "FQDN name of response policy zone",
+          "description": "FQDN of response policy zone",
           "data_type": "string",
           "contains": [
             "infoblox rpz"
@@ -327,7 +382,6 @@
         "network_view": {
           "default": "default",
           "description": "Network view",
-          "primary": true,
           "data_type": "string",
           "contains": [
             "infoblox view"
@@ -398,7 +452,7 @@
     {
       "action": "block ip",
       "description": "Block IP",
-      "verbose": "This action blocks the IP by creating appropriate RPZ. It blocks the domain by modifying the response of DNS recursive query. The domain will not resolve the IP address/network. If all the IP addresses of the domain are blocked, the domain will be blocked. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in acsending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)', if not, action will fail.</li><li>Add the RPZ rule 'Block IP Address (No Such Domain) Rule' with the specified IP address. If other RPZ rule with specified IP already exist with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
+      "verbose": "This action blocks the IP by creating appropriate RPZ. It blocks the domain by modifying the response of DNS recursive query. The domain will not resolve the IP address/network. If all the IP addresses of the domain are blocked, the domain will be blocked. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address. If other RPZ rule with specified IP already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
       "type": "contain",
       "identifier": "block_ip",
       "read_only": false,
@@ -413,8 +467,7 @@
         },
         "rp_zone": {
           "required": true,
-          "primary": true,
-          "description": "FQDN name of response policy zone",
+          "description": "FQDN of response policy zone",
           "data_type": "string",
           "contains": [
             "infoblox rpz"
@@ -423,7 +476,6 @@
         },
         "network_view": {
           "default": "default",
-          "primary": true,
           "description": "Network view",
           "data_type": "string",
           "contains": [
@@ -504,7 +556,7 @@
     {
       "action": "unblock domain",
       "description": "Unblock domain",
-      "verbose": "This action uses mutistep approach to unblock domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)', if not, action will fail.</li><li>Remove the RPZ rule 'Block Domain Name (No Such Domain) Rule' with the specified domain.</ul>Default value for <b>network_view</b> is 'default'.",
+      "verbose": "This action uses mutistep approach to unblock domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain.</ul>Default value for <b>network_view</b> is 'default'.",
       "type": "correct",
       "identifier": "unblock_domain",
       "read_only": false,
@@ -515,14 +567,13 @@
           "description": "Domain to unblock",
           "data_type": "string",
           "contains": [
-            "domain"
+            "domain", "url"
           ],
           "order": 0
         },
         "rp_zone": {
           "required": true,
-          "primary": true,
-          "description": "FQDN name of response policy zone",
+          "description": "FQDN of response policy zone",
           "data_type": "string",
           "contains": [
             "infoblox rpz"
@@ -532,7 +583,6 @@
         "network_view": {
           "default": "default",
           "description": "Network view",
-          "primary": true,
           "data_type": "string",
           "contains": [
             "infoblox view"
@@ -566,7 +616,7 @@
           "data_path": "action_result.parameter.domain",
           "data_type": "string",
           "contains": [
-            "domain"
+            "domain", "url"
           ],
           "column_name": "Domain",
           "column_order": 0
@@ -604,7 +654,7 @@
     {
       "action": "block domain",
       "description": "Block domain",
-      "verbose": "This action blocks the domain by creating appropriate RPZ. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used.This action uses multistep approach to block Domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)', if not, action will fail.</li><li>Add the RPZ rule 'Block Domain Name (No Such Domain) Rule' with the specified domain. If other RPZ rule with specified domain already exist with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
+      "verbose": "This action blocks the domain by creating appropriate RPZ. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain. If other RPZ rule with specified domain already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
       "type": "contain",
       "identifier": "block_domain",
       "read_only": false,
@@ -615,14 +665,13 @@
           "description": "Domain to block",
           "data_type": "string",
           "contains": [
-            "domain"
+            "domain", "url"
           ],
           "order": 0
         },
         "rp_zone": {
           "required": true,
-          "primary": true,
-          "description": "FQDN name of response policy zone",
+          "description": "FQDN of response policy zone",
           "data_type": "string",
           "contains": [
             "infoblox rpz"
@@ -631,7 +680,6 @@
         },
         "network_view": {
           "default": "default",
-          "primary": true,
           "description": "Network view",
           "data_type": "string",
           "contains": [
@@ -670,7 +718,7 @@
           "data_path": "action_result.parameter.domain",
           "data_type": "string",
           "contains": [
-            "domain"
+            "domain", "url"
           ],
           "column_name": "Domain FQDN Name",
           "column_order": 0
@@ -741,7 +789,7 @@
           "data_type": "string"
         },
         {
-          "column_name": "FQDN Name of RPZ",
+          "column_name": "FQDN of RPZ",
           "column_order": 0,
           "data_path": "action_result.data.*.fqdn",
           "data_type": "string",
@@ -770,8 +818,6 @@
           "data_type": "string"
         },
         {
-          "column_name": "Network View",
-          "column_order": 3,
           "data_path": "action_result.data.*.network_view",
           "data_type": "string",
           "contains": [
@@ -823,10 +869,83 @@
           "data_type": "string",
           "contains": [
             "infoblox view"
-          ]
+          ],
+          "column_name": "Network View",
+          "column_order": 3
         },
         {
           "data_path": "action_result.summary.total_response_policy_zones",
+          "data_type": "numeric"
+        },
+        {
+          "data_path": "summary.total_objects",
+          "data_type": "numeric"
+        },
+        {
+          "data_path": "summary.total_objects_successful",
+          "data_type": "numeric"
+        }
+      ]
+    },
+    {
+      "action": "list hosts",
+      "description": "List hosts",
+      "type": "investigate",
+      "identifier": "list_hosts",
+      "read_only": true,
+      "parameters": {},
+      "render": {
+        "width": 12,
+        "title": "List Hosts",
+        "type": "table",
+        "height": 5
+      },
+      "versions": "EQ(*)",
+      "output": [
+        {
+          "data_path": "action_result.data.*._ref",
+          "data_type": "string"
+        },
+        {
+          "column_name": "IP",
+          "column_order": 0,
+          "data_path": "action_result.data.*.ip",
+          "data_type": "string",
+          "contains": [
+            "ip"
+          ]
+        },
+        {
+          "column_name": "Host Name",
+          "column_order": 1,
+          "data_path": "action_result.data.*.name",
+          "data_type": "boolean",
+          "contains":[
+            "host name"
+          ]
+        },
+        {
+          "column_name": "Network View",
+          "column_order": 1,
+          "data_path": "action_result.data.*.view",
+          "data_type": "string"
+        },
+        {
+          "column_name": "DNS Zone",
+          "column_order": 2,
+          "data_path": "action_result.data.*.zone",
+          "data_type": "string"
+        },
+        {
+          "data_path": "action_result.status",
+          "data_type": "string"
+        },
+        {
+          "data_path": "action_result.message",
+          "data_type": "string"
+        },
+        {
+          "data_path": "action_result.summary.total_hosts",
           "data_type": "numeric"
         },
         {
