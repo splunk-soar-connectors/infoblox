@@ -1,5 +1,5 @@
 # --
-# File: infobloxddi/infobloxddi_connector.py
+# File: infoblox/infobloxddi_connector.py
 #
 # Copyright (c) Phantom Cyber Corporation, 2017
 #
