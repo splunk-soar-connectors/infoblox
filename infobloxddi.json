@@ -109,11 +109,11 @@
 
     },
     {
-      "action": "get host info",
-      "description": "Get information about host",
+      "action": "get system info",
+      "description": "Get system information",
       "verbose": "Default value for <b>network_view</b> is 'default'.",
       "type": "investigate",
-      "identifier": "get_host_info",
+      "identifier": "get_system_info",
       "read_only": true,
       "parameters": {
         "ip_hostname": {
@@ -174,7 +174,9 @@
           "data_type": "string",
           "contains": [
             "ip"
-          ]
+          ],
+          "column_name": "Host IP",
+          "column_order": 0
         },
         {
           "data_path": "action_result.data.*.network",
@@ -318,9 +320,7 @@
           "data_type": "string",
           "contains": [
             "ip", "host name"
-          ],
-          "column_name": "Address",
-          "column_order": 0
+          ]
         },
         {
           "data_path": "action_result.parameter.network_view",
@@ -365,7 +365,7 @@
         "ip": {
           "required": true,
           "primary": true,
-          "description": "IP to unblock",
+          "description": "IP/CIDR to unblock",
           "data_type": "string",
           "order": 0,
           "contains": [ "ip" ]
@@ -460,7 +460,7 @@
         "ip": {
           "required": true,
           "primary": true,
-          "description": "IP to block",
+          "description": "IP/CIDR to block",
           "data_type": "string",
           "order": 0,
           "contains": ["ip"]
@@ -720,7 +720,7 @@
           "contains": [
             "domain", "url"
           ],
-          "column_name": "Domain FQDN Name",
+          "column_name": "Domain",
           "column_order": 0
         },
         {
@@ -919,7 +919,7 @@
           "column_name": "Host Name",
           "column_order": 1,
           "data_path": "action_result.data.*.name",
-          "data_type": "boolean",
+          "data_type": "string",
           "contains":[
             "host name"
           ]
@@ -928,7 +928,8 @@
           "column_name": "Network View",
           "column_order": 1,
           "data_path": "action_result.data.*.view",
-          "data_type": "string"
+          "data_type": "string",
+          "contains": ["infoblox view"]
         },
         {
           "column_name": "DNS Zone",

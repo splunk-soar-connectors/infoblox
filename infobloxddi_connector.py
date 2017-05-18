@@ -349,7 +349,7 @@ class InfobloxddiConnector(BaseConnector):
         self.set_status_save_progress(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCC)
         return action_result.get_status()
 
-    def _get_host_info(self, param):
+    def _get_system_info(self, param):
         """ To get information about host, i.e. host's state is Free/Active/Static/Expired/Released/Abandoned/Backup/
         Offered/Declined/Reset.
 
@@ -391,7 +391,7 @@ class InfobloxddiConnector(BaseConnector):
         # If information for a given host is unavailable
         if not response_list:
             self.debug_print(consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
+            return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
 
         for data in response_list:
             # Converting epoch seconds to "%Y-%m-%d %H:%M:%S" date format
@@ -827,7 +827,7 @@ class InfobloxddiConnector(BaseConnector):
         # Dictionary mapping each action with its corresponding actions
         action_mapping = {
             "test_asset_connectivity": self._test_asset_connectivity,
-            "get_host_info": self._get_host_info,
+            "get_system_info": self._get_system_info,
             "block_domain": self._block_domain,
             "block_ip": self._block_ip,
             "unblock_ip": self._unblock_ip,
