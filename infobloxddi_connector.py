@@ -264,6 +264,14 @@ class InfobloxddiConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERR_SERVER_CONNECTION,
                                             e), response_data
 
+        # Handling the 404 status code for list_rpz action
+        if self.get_action_identifier() == "list_rpz" and \
+                request_obj.status_code == consts.INFOBLOX_REST_RESP_NOT_FOUND:
+            response_data = {
+                consts.INFOBLOX_RESOURCE_NOT_FOUND: True
+            }
+            return phantom.APP_SUCCESS, response_data
+
         if request_obj.status_code in ERROR_RESPONSE_DICT:
             message = ERROR_RESPONSE_DICT[request_obj.status_code]
 
@@ -381,19 +389,117 @@ class InfobloxddiConnector(BaseConnector):
         # Make call to get host information
         status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, params=params,
                                                 method="get")
-
         # Something went wrong
         if phantom.is_fail(status):
             return action_result.get_status()
 
-        response_list = response[consts.INFOBLOX_RESPONSE_DATA]
+        lease_response_list = response[consts.INFOBLOX_RESPONSE_DATA]
+
+        host_response_list = None
+        # Fetching the details of host from records:a/aaaa if network view is default
+        if param.get(consts.INFOBLOX_JSON_NETWORK_VIEW,
+                     consts.INFOBLOX_NETWORK_VIEW_DEFAULT) == consts.INFOBLOX_NETWORK_VIEW_DEFAULT:
+            # Invoking record:a for ipv4
+            if phantom.is_ip(ip_hostname):
+                record_a_params = {
+                    consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_A_RETURN_FIELDS,
+                    consts.INFOBLOX_JSON_A_IP: ip_hostname,
+                    consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
+                }
+
+                # Make call to get lease information
+                host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT, action_result,
+                                                                  params=record_a_params, method="get")
+
+                # Something went wrong
+                if phantom.is_fail(host_status):
+                    return action_result.get_status()
+
+            # Invoking record:a if ipv6
+            elif _is_ipv6(ip_hostname):
+                record_aaaa_params = {
+                    consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
+                    consts.INFOBLOX_JSON_AAAA_IP: ip_hostname,
+                    consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
+                }
+
+                # Make call to get lease information
+                host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv6_ENDPOINT, action_result,
+                                                                  params=record_aaaa_params, method="get")
+
+                # Something went wrong
+                if phantom.is_fail(host_status):
+                    return action_result.get_status()
+
+            # Invoking record:a and record:aaaa for hostname
+            else:
+                record_a_params = {
+                    consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_A_RETURN_FIELDS,
+                    consts.INFOBLOX_JSON_RECORD_NAME: ip_hostname,
+                    consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
+                }
+
+                # Make call to get lease information
+                host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT, action_result,
+                                                                  params=record_a_params, method="get")
+
+                # Something went wrong
+                if phantom.is_fail(host_status):
+                    return action_result.get_status()
+
+                # if response from record:a is empty list, invoke record:aaaa
+                if not response[consts.INFOBLOX_RESPONSE_DATA]:
+                    record_aaaa_params = {
+                        consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
+                        consts.INFOBLOX_JSON_RECORD_NAME: ip_hostname,
+                        consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
+                    }
+
+                    # Make call to get lease information
+                    host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv6_ENDPOINT,
+                                                                      action_result, params=record_aaaa_params,
+                                                                      method="get")
+
+                    # Something went wrong
+                    if phantom.is_fail(host_status):
+                        return action_result.get_status()
+
+            host_response_list = host_response[consts.INFOBLOX_RESPONSE_DATA]
 
         # If information for a given host is unavailable
-        if not response_list:
+        if not lease_response_list and not host_response_list:
             self.debug_print(consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
             return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
 
-        for data in response_list:
+        # For Static IP, lease result would be empty and host list will have details
+        if not lease_response_list and host_response_list:
+            for host_data in host_response_list:
+                data = {}
+                # Post processing the output, to change ipv4addr key to IP
+                client_host_name = host_data.get('name')
+                zone = '.{}'.format(host_data['zone'])
+                if client_host_name.endswith(zone):
+                    client_host_name = client_host_name[:-len(zone)]
+                data[consts.INFOBLOX_JSON_CLIENT_HOSTNAME] = client_host_name
+                data[consts.INFOBLOX_JSON_HARDWARE] = host_data.get('discovered_data', {}).get('mac_address')
+                data[consts.INFOBLOX_JSON_OS] = host_data.get('discovered_data', {}).get('os')
+                data[consts.INFOBLOX_JSON_ADDRESS] = host_data.get(consts.INFOBLOX_JSON_A_IP,
+                                                                   host_data.get(consts.INFOBLOX_JSON_AAAA_IP))
+                if(phantom.is_ip(host_data.get(consts.INFOBLOX_JSON_A_IP))):
+                    data[consts.INFOBLOX_JSON_PROTOCOL] = "IPV4"
+                elif(phantom.is_ip(host_data.get(consts.INFOBLOX_JSON_AAAA_IP))):
+                    data[consts.INFOBLOX_JSON_PROTOCOL] = "IPV6"
+
+                summary_data["mac_address"] = data[consts.INFOBLOX_JSON_HARDWARE]
+                summary_data["is_static_ip"] = True
+                action_result.add_data(data)
+
+        for data in lease_response_list:
+            # Filter the host information details
+            host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or
+                                                                 host['ipv6addr'] == data['address'])]
+            if host_data:
+                data['os'] = host_data[0].get('discovered_data', {}).get('os')
             # Converting epoch seconds to "%Y-%m-%d %H:%M:%S" date format
             data[consts.INFOBLOX_JSON_CLTT] = time.strftime(consts.INFOBLOX_JSON_DATE_FORMAT,
                                                             time.localtime(data[consts.INFOBLOX_JSON_CLTT]))
@@ -404,6 +510,7 @@ class InfobloxddiConnector(BaseConnector):
             summary_data["mac_address"] = data["hardware"]
             summary_data["binding_state"] = data["binding_state"]
             summary_data["never_ends"] = data["never_ends"]
+            summary_data["is_static_ip"] = False
             action_result.add_data(data)
 
         return action_result.set_status(phantom.APP_SUCCESS)
@@ -750,6 +857,9 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_fail(rp_zone_details_status):
             return action_result.get_status()
 
+        if rp_zone_details.get(consts.INFOBLOX_RESOURCE_NOT_FOUND):
+            return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_LIST_RPZ_NON_DEF_MSG)
+
         summary_data[consts.INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES] = len(rp_zone_details[consts.INFOBLOX_RESPONSE_DATA])
 
         for rp_zone_detail in rp_zone_details[consts.INFOBLOX_RESPONSE_DATA]:
@@ -785,7 +895,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Loop through all the hosts and add to action_result
         for ipv4_host in ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]:
-            # Post processing the output, to change ipv4addr key to ip
+            # Post processing the output, to change ipv4addr key to IP
             ipv4_host['ip'] = ipv4_host.pop('ipv4addr')
             zone = '.{}'.format(ipv4_host['zone'])
             if ipv4_host['name'].endswith(zone):
@@ -805,7 +915,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Loop through all the hosts and add to action_result
         for ipv6_host in ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA]:
-            # Post processing the output, to change ipv4addr key to ip
+            # Post processing the output, to change ipv4addr key to IP
             ipv6_host['ip'] = ipv6_host.pop('ipv6addr')
             zone = '.{}'.format(ipv6_host['zone'])
             if ipv6_host['name'].endswith(zone):
@@ -813,7 +923,7 @@ class InfobloxddiConnector(BaseConnector):
             action_result.add_data(ipv6_host)
 
         summary_data[consts.INFOBLOX_TOTAL_HOSTS] = len(ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]) + \
-                                                    len(ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA])
+            len(ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA])
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
