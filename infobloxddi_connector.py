@@ -434,24 +434,25 @@ class InfobloxddiConnector(BaseConnector):
             # Invoking record:a and record:aaaa for hostname
             else:
                 record_a_params = {
-                    consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_A_RETURN_FIELDS,
-                    consts.INFOBLOX_JSON_RECORD_NAME: ip_hostname,
-                    consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
-                }
+                        consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_A_RETURN_FIELDS,
+                        "{}{}".format(consts.INFOBLOX_JSON_RECORD_NAME, "~"): ip_hostname,
+                        consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
+                    }
 
                 # Make call to get lease information
-                host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT, action_result,
-                                                                  params=record_a_params, method="get")
+                host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT,
+                                                                  action_result, params=record_a_params,
+                                                                  method="get")
 
                 # Something went wrong
                 if phantom.is_fail(host_status):
                     return action_result.get_status()
 
                 # if response from record:a is empty list, invoke record:aaaa
-                if not response[consts.INFOBLOX_RESPONSE_DATA]:
+                if not host_response[consts.INFOBLOX_RESPONSE_DATA]:
                     record_aaaa_params = {
                         consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
-                        consts.INFOBLOX_JSON_RECORD_NAME: ip_hostname,
+                        "{}{}".format(consts.INFOBLOX_JSON_RECORD_NAME, "~"): ip_hostname,
                         consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
                     }
 
@@ -480,6 +481,9 @@ class InfobloxddiConnector(BaseConnector):
                 zone = '.{}'.format(host_data['zone'])
                 if client_host_name.endswith(zone):
                     client_host_name = client_host_name[:-len(zone)]
+                if not (phantom.is_ip(ip_hostname) or _is_ipv6(ip_hostname)):
+                    if client_host_name != ip_hostname:
+                        continue
                 data[consts.INFOBLOX_JSON_CLIENT_HOSTNAME] = client_host_name
                 data[consts.INFOBLOX_JSON_HARDWARE] = host_data.get('discovered_data', {}).get('mac_address')
                 data[consts.INFOBLOX_JSON_OS] = host_data.get('discovered_data', {}).get('os')
@@ -512,6 +516,10 @@ class InfobloxddiConnector(BaseConnector):
             summary_data["never_ends"] = data["never_ends"]
             summary_data["is_static_ip"] = False
             action_result.add_data(data)
+
+        if not action_result.get_data_size():
+            self.debug_print(consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
+            return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_HOST_INFO_UNAVAILABLE)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 

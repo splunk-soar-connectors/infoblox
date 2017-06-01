@@ -111,7 +111,7 @@
     {
       "action": "get system info",
       "description": "Get system information",
-      "verbose": "Default value for <b>network_view</b> is 'default'. This action will not fetch information of system, which has static IP configured and belongs to non-default network view.",
+      "verbose": "Default value for <b>network_view</b> is 'default'. This action will not fetch system information of a host that has static IP and belongs to non-default network view.",
       "type": "investigate",
       "identifier": "get_system_info",
       "read_only": true,
