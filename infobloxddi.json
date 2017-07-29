@@ -1,18 +1,18 @@
 {
   "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
   "name": "Infoblox DDI",
-  "description": "This app supports various containment and investigative actions on <b>Infoblox Grid Manager</b>.",
+  "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
   "publisher": "Phantom",
   "package_name": "phantom_infobloxddi",
   "license": "Copyright (c) Phantom Cyber Corporation 2017",
   "main_module": "infobloxddi_connector.pyc",
   "type": "network access control",
-    "app_version": "1.0.7",
+    "app_version": "1.0.8",
     "utctime_updated": "2017-06-01T01:17:30.000000Z",
   "product_vendor": "Infoblox",
   "product_name": "Infoblox DDI",
   "product_version_regex": ".*",
-  "min_phantom_version": "2.1.452",
+  "min_phantom_version": "2.1.467",
   "logo": "infoblox.png",
   "configuration": {
     "url": {
