@@ -7,8 +7,8 @@
   "license": "Copyright (c) Phantom Cyber Corporation 2017",
   "main_module": "infobloxddi_connector.pyc",
   "type": "network access control",
-    "app_version": "1.0.8",
-    "utctime_updated": "2017-06-01T01:17:30.000000Z",
+  "app_version": "1.0.9",
+  "utctime_updated": "2017-12-19T23:41:38.000000Z",
   "product_vendor": "Infoblox",
   "product_name": "Infoblox DDI",
   "product_version_regex": ".*",
@@ -106,7 +106,6 @@
         }
       ],
       "versions": "EQ(*)"
-
     },
     {
       "action": "get system info",
@@ -123,7 +122,8 @@
           "data_type": "string",
           "order": 0,
           "contains": [
-            "ip", "host name"
+            "ip",
+            "host name"
           ]
         },
         "network_view": {
@@ -325,7 +325,8 @@
           "data_path": "action_result.parameter.ip_hostname",
           "data_type": "string",
           "contains": [
-            "ip", "host name"
+            "ip",
+            "host name"
           ]
         },
         {
@@ -378,7 +379,9 @@
           "description": "IP/CIDR to unblock",
           "data_type": "string",
           "order": 0,
-          "contains": [ "ip" ]
+          "contains": [
+            "ip"
+          ]
         },
         "rp_zone": {
           "required": true,
@@ -473,7 +476,9 @@
           "description": "IP/CIDR to block",
           "data_type": "string",
           "order": 0,
-          "contains": ["ip"]
+          "contains": [
+            "ip"
+          ]
         },
         "rp_zone": {
           "required": true,
@@ -577,7 +582,8 @@
           "description": "Domain to unblock",
           "data_type": "string",
           "contains": [
-            "domain", "url"
+            "domain",
+            "url"
           ],
           "order": 0
         },
@@ -599,7 +605,6 @@
           ],
           "order": 2
         }
-
       },
       "render": {
         "width": 12,
@@ -626,7 +631,8 @@
           "data_path": "action_result.parameter.domain",
           "data_type": "string",
           "contains": [
-            "domain", "url"
+            "domain",
+            "url"
           ],
           "column_name": "Domain",
           "column_order": 0
@@ -675,7 +681,8 @@
           "description": "Domain to block",
           "data_type": "string",
           "contains": [
-            "domain", "url"
+            "domain",
+            "url"
           ],
           "order": 0
         },
@@ -728,7 +735,8 @@
           "data_path": "action_result.parameter.domain",
           "data_type": "string",
           "contains": [
-            "domain", "url"
+            "domain",
+            "url"
           ],
           "column_name": "Domain",
           "column_order": 0
@@ -930,7 +938,7 @@
           "column_order": 1,
           "data_path": "action_result.data.*.name",
           "data_type": "string",
-          "contains":[
+          "contains": [
             "host name"
           ]
         },
@@ -939,7 +947,9 @@
           "column_order": 1,
           "data_path": "action_result.data.*.view",
           "data_type": "string",
-          "contains": ["infoblox view"]
+          "contains": [
+            "infoblox view"
+          ]
         },
         {
           "column_name": "DNS Zone",
