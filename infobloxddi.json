@@ -4,7 +4,7 @@
     "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
     "publisher": "Phantom",
     "package_name": "phantom_infobloxddi",
-    "license": "Copyright (c) Phantom Cyber Corporation 2017",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2017-2018",
     "main_module": "infobloxddi_connector.pyc",
     "type": "network access control",
     "app_version": "1.0.11",
