@@ -1,973 +1,984 @@
 {
-  "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
-  "name": "Infoblox DDI",
-  "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
-  "publisher": "Phantom",
-  "package_name": "phantom_infobloxddi",
-  "license": "Copyright (c) Phantom Cyber Corporation 2017",
-  "main_module": "infobloxddi_connector.pyc",
-  "type": "network access control",
-    "app_version": "1.0.8",
-    "utctime_updated": "2017-06-01T01:17:30.000000Z",
-  "product_vendor": "Infoblox",
-  "product_name": "Infoblox DDI",
-  "product_version_regex": ".*",
-  "min_phantom_version": "2.1.467",
-  "logo": "infoblox.png",
-  "configuration": {
-    "url": {
-      "required": true,
-      "description": "URL (e.g. https://10.10.10.10)",
-      "data_type": "string",
-      "order": 0
+    "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
+    "name": "Infoblox DDI",
+    "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
+    "publisher": "Phantom",
+    "package_name": "phantom_infobloxddi",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2017-2018",
+    "main_module": "infobloxddi_connector.pyc",
+    "type": "network access control",
+    "app_version": "1.0.10",
+    "utctime_updated": "2018-01-26T00:48:15.000000Z",
+    "product_vendor": "Infoblox",
+    "product_name": "Infoblox DDI",
+    "product_version_regex": ".*",
+    "min_phantom_version": "2.1.467",
+    "logo": "logo_infoblox.svg",
+    "logo_dark": "logo_infoblox_dark.svg",
+    "configuration": {
+        "url": {
+            "required": true,
+            "description": "URL (e.g. https://10.10.10.10)",
+            "data_type": "string",
+            "order": 0
+        },
+        "verify_server_cert": {
+            "default": false,
+            "description": "Verify server certificate",
+            "data_type": "boolean",
+            "order": 1
+        },
+        "username": {
+            "required": true,
+            "description": "Username",
+            "data_type": "string",
+            "order": 2
+        },
+        "password": {
+            "required": true,
+            "description": "Password",
+            "data_type": "password",
+            "order": 3
+        }
     },
-    "verify_server_cert": {
-      "default": false,
-      "description": "Verify server certificate",
-      "data_type": "boolean",
-      "order": 1
-    },
-    "username": {
-      "required": true,
-      "description": "Username",
-      "data_type": "string",
-      "order": 2
-    },
-    "password": {
-      "required": true,
-      "description": "Password",
-      "data_type": "password",
-      "order": 3
-    }
-  },
-  "actions": [
-    {
-      "action": "test connectivity",
-      "description": "Validate credentials provided for connectivity",
-      "type": "test",
-      "identifier": "test_asset_connectivity",
-      "read_only": true,
-      "parameters": {},
-      "output": [],
-      "versions": "EQ(*)"
-    },
-    {
-      "action": "list network view",
-      "description": "List network view",
-      "type": "investigate",
-      "identifier": "list_network_view",
-      "read_only": true,
-      "parameters": {},
-      "render": {
-        "width": 12,
-        "height": 5,
-        "type": "table",
-        "title": "List Network View"
-      },
-      "output": [
+    "actions": [
         {
-          "data_path": "action_result.data.*._ref",
-          "data_type": "string"
+            "action": "test connectivity",
+            "description": "Validate credentials provided for connectivity",
+            "type": "test",
+            "identifier": "test_asset_connectivity",
+            "read_only": true,
+            "parameters": {},
+            "output": [],
+            "versions": "EQ(*)"
         },
         {
-          "column_name": "Default",
-          "column_order": 1,
-          "data_path": "action_result.data.*.is_default",
-          "data_type": "boolean"
+            "action": "list network view",
+            "description": "List network view",
+            "type": "investigate",
+            "identifier": "list_network_view",
+            "read_only": true,
+            "parameters": {},
+            "render": {
+                "width": 12,
+                "height": 5,
+                "type": "table",
+                "title": "List Network View"
+            },
+            "output": [
+                {
+                    "data_path": "action_result.data.*._ref",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "Default",
+                    "column_order": 1,
+                    "data_path": "action_result.data.*.is_default",
+                    "data_type": "boolean"
+                },
+                {
+                    "column_name": "Network View",
+                    "column_order": 0,
+                    "data_path": "action_result.data.*.name",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ]
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.total_network_view",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)"
         },
         {
-          "column_name": "Network View",
-          "column_order": 0,
-          "data_path": "action_result.data.*.name",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ]
+            "action": "get system info",
+            "description": "Get system information",
+            "verbose": "Default value for <b>network_view</b> is 'default'. This action will not fetch system information of a host that has static IP and belongs to non-default network view.",
+            "type": "investigate",
+            "identifier": "get_system_info",
+            "read_only": true,
+            "parameters": {
+                "ip_hostname": {
+                    "required": true,
+                    "primary": true,
+                    "description": "IP/Hostname",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "ip",
+                        "host name"
+                    ]
+                },
+                "network_view": {
+                    "default": "default",
+                    "description": "Network view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 1
+                }
+            },
+            "render": {
+                "width": 12,
+                "height": 5,
+                "type": "table",
+                "title": "IP/Hostname Information"
+            },
+            "output": [
+                {
+                    "data_path": "action_result.data.*.uid",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*._ref",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.cltt",
+                    "data_type": "string",
+                    "column_name": "Client Last Transaction Time",
+                    "column_order": 7
+                },
+                {
+                    "data_path": "action_result.data.*.ends",
+                    "data_type": "string",
+                    "column_name": "Ends",
+                    "column_order": 6
+                },
+                {
+                    "data_path": "action_result.data.*.starts",
+                    "data_type": "string",
+                    "column_name": "Starts",
+                    "column_order": 5
+                },
+                {
+                    "data_path": "action_result.data.*.address",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "Host IP",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.data.*.network",
+                    "data_type": "string",
+                    "column_name": "Network",
+                    "column_order": 8
+                },
+                {
+                    "data_path": "action_result.data.*.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.hardware",
+                    "data_type": "string",
+                    "contains": [
+                        "mac address"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.variable",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.tsfp",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.tstp",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.option",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.protocol",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.remote_id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.username",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.served_by",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "Served By",
+                    "column_order": 10
+                },
+                {
+                    "data_path": "action_result.data.*.never_ends",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.never_starts",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.binding_state",
+                    "data_type": "string",
+                    "column_name": "Binding State",
+                    "column_order": 4
+                },
+                {
+                    "data_path": "action_result.data.*.billing_class",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.is_invalid_mac",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.client_hostname",
+                    "data_type": "string",
+                    "contains": [
+                        "host name"
+                    ],
+                    "column_name": "Client Host Name",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.ipv6_duid",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.ipv6_iaid",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.ipv6_preferred_lifetime",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.data.*.ipv6_prefix_bits",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.data.*.server_host_name",
+                    "data_type": "string",
+                    "contains": [
+                        "host name"
+                    ],
+                    "column_name": "Server Host Name",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.data.*.next_binding_state",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.on_commit",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.on_expiry",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.on_release",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.os",
+                    "data_type": "string",
+                    "column_name": "OS",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.ip_hostname",
+                    "data_type": "string",
+                    "contains": [
+                        "ip",
+                        "host name"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 9
+                },
+                {
+                    "data_path": "action_result.summary.mac_address",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.binding_state",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.never_ends",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.summary.is_static_ip",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)"
         },
         {
-          "data_path": "action_result.status",
-          "data_type": "string"
+            "action": "unblock ip",
+            "description": "Unblock IP",
+            "verbose": "This action uses multistep approach to unblock IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address.</ul>Default value for <b>network_view</b> is 'default'.",
+            "type": "correct",
+            "identifier": "unblock_ip",
+            "read_only": false,
+            "parameters": {
+                "ip": {
+                    "required": true,
+                    "primary": true,
+                    "description": "IP/CIDR to unblock",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "ip"
+                    ]
+                },
+                "rp_zone": {
+                    "required": true,
+                    "description": "FQDN of response policy zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "order": 1
+                },
+                "network_view": {
+                    "default": "default",
+                    "description": "Network view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 2
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Unblock IP",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.data.*.reference_link",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Unblock Status",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.parameter.ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "IP",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.rp_zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "column_name": "Response Policy Zone",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)",
+            "undo": "block ip"
         },
         {
-          "data_path": "action_result.message",
-          "data_type": "string"
+            "action": "block ip",
+            "description": "Block IP",
+            "verbose": "This action blocks the IP by creating appropriate RPZ. It blocks the domain by modifying the response of DNS recursive query. The domain will not resolve the IP address/network. If all the IP addresses of the domain are blocked, the domain will be blocked. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address. If other RPZ rule with specified IP already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
+            "type": "contain",
+            "identifier": "block_ip",
+            "read_only": false,
+            "parameters": {
+                "ip": {
+                    "required": true,
+                    "primary": true,
+                    "description": "IP/CIDR to block",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "ip"
+                    ]
+                },
+                "rp_zone": {
+                    "required": true,
+                    "description": "FQDN of response policy zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "order": 1
+                },
+                "network_view": {
+                    "default": "default",
+                    "description": "Network view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 2
+                },
+                "comment": {
+                    "description": "Comment (maximum 256 characters)",
+                    "data_type": "string",
+                    "order": 3
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Block IP",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.data.*.reference_link",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Block Status",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.parameter.ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "IP",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.parameter.rp_zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "column_name": "Response Policy Zone",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.parameter.comment",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)",
+            "undo": "unblock ip"
         },
         {
-          "data_path": "action_result.summary.total_network_view",
-          "data_type": "numeric"
+            "action": "unblock domain",
+            "description": "Unblock domain",
+            "verbose": "This action uses mutistep approach to unblock domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain.</ul>Default value for <b>network_view</b> is 'default'.",
+            "type": "correct",
+            "identifier": "unblock_domain",
+            "read_only": false,
+            "parameters": {
+                "domain": {
+                    "required": true,
+                    "primary": true,
+                    "description": "Domain to unblock",
+                    "data_type": "string",
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "order": 0
+                },
+                "rp_zone": {
+                    "required": true,
+                    "description": "FQDN of response policy zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "order": 1
+                },
+                "network_view": {
+                    "default": "default",
+                    "description": "Network view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 2
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Unblock Domain",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.data.*.reference_link",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Unblock Status",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.parameter.domain",
+                    "data_type": "string",
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "column_name": "Domain",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.rp_zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "column_name": "Response Policy Zone",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)",
+            "undo": "block domain"
         },
         {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
+            "action": "block domain",
+            "description": "Block domain",
+            "verbose": "This action blocks the domain by creating appropriate RPZ. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain. If other RPZ rule with specified domain already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
+            "type": "contain",
+            "identifier": "block_domain",
+            "read_only": false,
+            "parameters": {
+                "domain": {
+                    "required": true,
+                    "primary": true,
+                    "description": "Domain to block",
+                    "data_type": "string",
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "order": 0
+                },
+                "rp_zone": {
+                    "required": true,
+                    "description": "FQDN of response policy zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "order": 1
+                },
+                "network_view": {
+                    "default": "default",
+                    "description": "Network view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 2
+                },
+                "comment": {
+                    "description": "Comment (maximum 256 characters)",
+                    "data_type": "string",
+                    "order": 3
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Block Domain",
+                "type": "table",
+                "height": 5
+            },
+            "output": [
+                {
+                    "data_path": "action_result.data.*.reference_link",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Block Status",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.parameter.domain",
+                    "data_type": "string",
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "column_name": "Domain",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.parameter.rp_zone",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ],
+                    "column_name": "RP Zone",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.parameter.comment",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "versions": "EQ(*)",
+            "undo": "unblock domain"
         },
         {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
+            "action": "list rpz",
+            "description": "List details of Response Policy Zones",
+            "verbose": "Default value for <b>network_view</b> is 'default'. This action fetches the data from default network view only.",
+            "type": "investigate",
+            "identifier": "list_rpz",
+            "read_only": true,
+            "parameters": {
+                "network_view": {
+                    "default": "default",
+                    "description": "Network view",
+                    "primary": true,
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 0
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Response Policy Zone Details",
+                "type": "table",
+                "height": 5
+            },
+            "versions": "EQ(*)",
+            "output": [
+                {
+                    "data_path": "action_result.data.*._ref",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "FQDN of RPZ",
+                    "column_order": 0,
+                    "data_path": "action_result.data.*.fqdn",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox rpz"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.disable",
+                    "data_type": "boolean"
+                },
+                {
+                    "data_path": "action_result.data.*.ns_group",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "Type",
+                    "column_order": 1,
+                    "data_path": "action_result.data.*.rpz_type",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "RPZ Policy Override",
+                    "column_order": 2,
+                    "data_path": "action_result.data.*.rpz_policy",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.primary_type",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "Priority",
+                    "column_order": 5,
+                    "data_path": "action_result.data.*.rpz_priority",
+                    "data_type": "numeric"
+                },
+                {
+                    "column_name": "Severity",
+                    "column_order": 4,
+                    "data_path": "action_result.data.*.rpz_severity",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "Comment",
+                    "column_order": 7,
+                    "data_path": "action_result.data.*.comment",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "Last Updated",
+                    "column_order": 6,
+                    "data_path": "action_result.data.*.rpz_last_updated_time",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.substitute_name",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.summary.total_response_policy_zones",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ]
+        },
+        {
+            "action": "list hosts",
+            "description": "List hosts",
+            "type": "investigate",
+            "identifier": "list_hosts",
+            "read_only": true,
+            "parameters": {},
+            "render": {
+                "width": 12,
+                "title": "List Hosts",
+                "type": "table",
+                "height": 5
+            },
+            "versions": "EQ(*)",
+            "output": [
+                {
+                    "data_path": "action_result.data.*._ref",
+                    "data_type": "string"
+                },
+                {
+                    "column_name": "IP",
+                    "column_order": 0,
+                    "data_path": "action_result.data.*.ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ]
+                },
+                {
+                    "column_name": "Host Name",
+                    "column_order": 1,
+                    "data_path": "action_result.data.*.name",
+                    "data_type": "string",
+                    "contains": [
+                        "host name"
+                    ]
+                },
+                {
+                    "column_name": "Network View",
+                    "column_order": 1,
+                    "data_path": "action_result.data.*.view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ]
+                },
+                {
+                    "column_name": "DNS Zone",
+                    "column_order": 2,
+                    "data_path": "action_result.data.*.zone",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.total_hosts",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ]
         }
-      ],
-      "versions": "EQ(*)"
-
-    },
-    {
-      "action": "get system info",
-      "description": "Get system information",
-      "verbose": "Default value for <b>network_view</b> is 'default'. This action will not fetch system information of a host that has static IP and belongs to non-default network view.",
-      "type": "investigate",
-      "identifier": "get_system_info",
-      "read_only": true,
-      "parameters": {
-        "ip_hostname": {
-          "required": true,
-          "primary": true,
-          "description": "IP/Hostname",
-          "data_type": "string",
-          "order": 0,
-          "contains": [
-            "ip", "host name"
-          ]
-        },
-        "network_view": {
-          "default": "default",
-          "description": "Network view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "order": 1
-        }
-      },
-      "render": {
-        "width": 12,
-        "height": 5,
-        "type": "table",
-        "title": "IP/Hostname Information"
-      },
-      "output": [
-        {
-          "data_path": "action_result.data.*.uid",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*._ref",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.cltt",
-          "data_type": "string",
-          "column_name": "Client Last Transaction Time",
-          "column_order": 7
-        },
-        {
-          "data_path": "action_result.data.*.ends",
-          "data_type": "string",
-          "column_name": "Ends",
-          "column_order": 6
-        },
-        {
-          "data_path": "action_result.data.*.starts",
-          "data_type": "string",
-          "column_name": "Starts",
-          "column_order": 5
-        },
-        {
-          "data_path": "action_result.data.*.address",
-          "data_type": "string",
-          "contains": [
-            "ip"
-          ],
-          "column_name": "Host IP",
-          "column_order": 0
-        },
-        {
-          "data_path": "action_result.data.*.network",
-          "data_type": "string",
-          "column_name": "Network",
-          "column_order": 8
-        },
-        {
-          "data_path": "action_result.data.*.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ]
-        },
-        {
-          "data_path": "action_result.data.*.hardware",
-          "data_type": "string",
-          "contains": [
-            "mac address"
-          ]
-        },
-        {
-          "data_path": "action_result.data.*.variable",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.tsfp",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.tstp",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.option",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.protocol",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.remote_id",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.username",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.served_by",
-          "data_type": "string",
-          "contains": [
-            "ip"
-          ],
-          "column_name": "Served By",
-          "column_order": 10
-        },
-        {
-          "data_path": "action_result.data.*.never_ends",
-          "data_type": "boolean"
-        },
-        {
-          "data_path": "action_result.data.*.never_starts",
-          "data_type": "boolean"
-        },
-        {
-          "data_path": "action_result.data.*.binding_state",
-          "data_type": "string",
-          "column_name": "Binding State",
-          "column_order": 4
-        },
-        {
-          "data_path": "action_result.data.*.billing_class",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.is_invalid_mac",
-          "data_type": "boolean"
-        },
-        {
-          "data_path": "action_result.data.*.client_hostname",
-          "data_type": "string",
-          "contains": [
-            "host name"
-          ],
-          "column_name": "Client Host Name",
-          "column_order": 1
-        },
-        {
-          "data_path": "action_result.data.*.ipv6_duid",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.ipv6_iaid",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.ipv6_preferred_lifetime",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "action_result.data.*.ipv6_prefix_bits",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "action_result.data.*.server_host_name",
-          "data_type": "string",
-          "contains": [
-            "host name"
-          ],
-          "column_name": "Server Host Name",
-          "column_order": 2
-        },
-        {
-          "data_path": "action_result.data.*.next_binding_state",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.on_commit",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.on_expiry",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.on_release",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.os",
-          "data_type": "string",
-          "column_name": "OS",
-          "column_order": 3
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.parameter.ip_hostname",
-          "data_type": "string",
-          "contains": [
-            "ip", "host name"
-          ]
-        },
-        {
-          "data_path": "action_result.parameter.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 9
-        },
-        {
-          "data_path": "action_result.summary.mac_address",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.summary.binding_state",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.summary.never_ends",
-          "data_type": "boolean"
-        },
-        {
-          "data_path": "action_result.summary.is_static_ip",
-          "data_type": "boolean"
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ],
-      "versions": "EQ(*)"
-    },
-    {
-      "action": "unblock ip",
-      "description": "Unblock IP",
-      "verbose": "This action uses multistep approach to unblock IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address.</ul>Default value for <b>network_view</b> is 'default'.",
-      "type": "correct",
-      "identifier": "unblock_ip",
-      "read_only": false,
-      "parameters": {
-        "ip": {
-          "required": true,
-          "primary": true,
-          "description": "IP/CIDR to unblock",
-          "data_type": "string",
-          "order": 0,
-          "contains": [ "ip" ]
-        },
-        "rp_zone": {
-          "required": true,
-          "description": "FQDN of response policy zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "order": 1
-        },
-        "network_view": {
-          "default": "default",
-          "description": "Network view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "order": 2
-        }
-      },
-      "render": {
-        "width": 12,
-        "title": "Unblock IP",
-        "type": "table",
-        "height": 5
-      },
-      "output": [
-        {
-          "data_path": "action_result.data.*.reference_link",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string",
-          "column_name": "Unblock Status",
-          "column_order": 3
-        },
-        {
-          "data_path": "action_result.parameter.ip",
-          "data_type": "string",
-          "contains": [
-            "ip"
-          ],
-          "column_name": "IP",
-          "column_order": 0
-        },
-        {
-          "data_path": "action_result.parameter.rp_zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "column_name": "Response Policy Zone",
-          "column_order": 1
-        },
-        {
-          "data_path": "action_result.parameter.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 2
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ],
-      "versions": "EQ(*)",
-      "undo": "block ip"
-    },
-    {
-      "action": "block ip",
-      "description": "Block IP",
-      "verbose": "This action blocks the IP by creating appropriate RPZ. It blocks the domain by modifying the response of DNS recursive query. The domain will not resolve the IP address/network. If all the IP addresses of the domain are blocked, the domain will be blocked. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address. If other RPZ rule with specified IP already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
-      "type": "contain",
-      "identifier": "block_ip",
-      "read_only": false,
-      "parameters": {
-        "ip": {
-          "required": true,
-          "primary": true,
-          "description": "IP/CIDR to block",
-          "data_type": "string",
-          "order": 0,
-          "contains": ["ip"]
-        },
-        "rp_zone": {
-          "required": true,
-          "description": "FQDN of response policy zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "order": 1
-        },
-        "network_view": {
-          "default": "default",
-          "description": "Network view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "order": 2
-        },
-        "comment": {
-          "description": "Comment (maximum 256 characters)",
-          "data_type": "string",
-          "order": 3
-        }
-      },
-      "render": {
-        "width": 12,
-        "title": "Block IP",
-        "type": "table",
-        "height": 5
-      },
-      "output": [
-        {
-          "data_path": "action_result.data.*.reference_link",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string",
-          "column_name": "Block Status",
-          "column_order": 3
-        },
-        {
-          "data_path": "action_result.parameter.ip",
-          "data_type": "string",
-          "contains": [
-            "ip"
-          ],
-          "column_name": "IP",
-          "column_order": 0
-        },
-        {
-          "data_path": "action_result.parameter.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 2
-        },
-        {
-          "data_path": "action_result.parameter.rp_zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "column_name": "Response Policy Zone",
-          "column_order": 1
-        },
-        {
-          "data_path": "action_result.parameter.comment",
-          "data_type": "string"
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ],
-      "versions": "EQ(*)",
-      "undo": "unblock ip"
-    },
-    {
-      "action": "unblock domain",
-      "description": "Unblock domain",
-      "verbose": "This action uses mutistep approach to unblock domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain.</ul>Default value for <b>network_view</b> is 'default'.",
-      "type": "correct",
-      "identifier": "unblock_domain",
-      "read_only": false,
-      "parameters": {
-        "domain": {
-          "required": true,
-          "primary": true,
-          "description": "Domain to unblock",
-          "data_type": "string",
-          "contains": [
-            "domain", "url"
-          ],
-          "order": 0
-        },
-        "rp_zone": {
-          "required": true,
-          "description": "FQDN of response policy zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "order": 1
-        },
-        "network_view": {
-          "default": "default",
-          "description": "Network view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "order": 2
-        }
-
-      },
-      "render": {
-        "width": 12,
-        "title": "Unblock Domain",
-        "type": "table",
-        "height": 5
-      },
-      "output": [
-        {
-          "data_path": "action_result.data.*.reference_link",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string",
-          "column_name": "Unblock Status",
-          "column_order": 3
-        },
-        {
-          "data_path": "action_result.parameter.domain",
-          "data_type": "string",
-          "contains": [
-            "domain", "url"
-          ],
-          "column_name": "Domain",
-          "column_order": 0
-        },
-        {
-          "data_path": "action_result.parameter.rp_zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "column_name": "Response Policy Zone",
-          "column_order": 1
-        },
-        {
-          "data_path": "action_result.parameter.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 2
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ],
-      "versions": "EQ(*)",
-      "undo": "block domain"
-    },
-    {
-      "action": "block domain",
-      "description": "Block domain",
-      "verbose": "This action blocks the domain by creating appropriate RPZ. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. RPZ are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses multistep approach to block domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain. If other RPZ rule with specified domain already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.",
-      "type": "contain",
-      "identifier": "block_domain",
-      "read_only": false,
-      "parameters": {
-        "domain": {
-          "required": true,
-          "primary": true,
-          "description": "Domain to block",
-          "data_type": "string",
-          "contains": [
-            "domain", "url"
-          ],
-          "order": 0
-        },
-        "rp_zone": {
-          "required": true,
-          "description": "FQDN of response policy zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "order": 1
-        },
-        "network_view": {
-          "default": "default",
-          "description": "Network view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "order": 2
-        },
-        "comment": {
-          "description": "Comment (maximum 256 characters)",
-          "data_type": "string",
-          "order": 3
-        }
-      },
-      "render": {
-        "width": 12,
-        "title": "Block Domain",
-        "type": "table",
-        "height": 5
-      },
-      "output": [
-        {
-          "data_path": "action_result.data.*.reference_link",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string",
-          "column_name": "Block Status",
-          "column_order": 3
-        },
-        {
-          "data_path": "action_result.parameter.domain",
-          "data_type": "string",
-          "contains": [
-            "domain", "url"
-          ],
-          "column_name": "Domain",
-          "column_order": 0
-        },
-        {
-          "data_path": "action_result.parameter.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 2
-        },
-        {
-          "data_path": "action_result.parameter.rp_zone",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ],
-          "column_name": "RP Zone",
-          "column_order": 1
-        },
-        {
-          "data_path": "action_result.parameter.comment",
-          "data_type": "string"
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ],
-      "versions": "EQ(*)",
-      "undo": "unblock domain"
-    },
-    {
-      "action": "list rpz",
-      "description": "List details of Response Policy Zones",
-      "verbose": "Default value for <b>network_view</b> is 'default'. This action fetches the data from default network view only.",
-      "type": "investigate",
-      "identifier": "list_rpz",
-      "read_only": true,
-      "parameters": {
-        "network_view": {
-          "default": "default",
-          "description": "Network view",
-          "primary": true,
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "order": 0
-        }
-      },
-      "render": {
-        "width": 12,
-        "title": "Response Policy Zone Details",
-        "type": "table",
-        "height": 5
-      },
-      "versions": "EQ(*)",
-      "output": [
-        {
-          "data_path": "action_result.data.*._ref",
-          "data_type": "string"
-        },
-        {
-          "column_name": "FQDN of RPZ",
-          "column_order": 0,
-          "data_path": "action_result.data.*.fqdn",
-          "data_type": "string",
-          "contains": [
-            "infoblox rpz"
-          ]
-        },
-        {
-          "data_path": "action_result.data.*.disable",
-          "data_type": "boolean"
-        },
-        {
-          "data_path": "action_result.data.*.ns_group",
-          "data_type": "string"
-        },
-        {
-          "column_name": "Type",
-          "column_order": 1,
-          "data_path": "action_result.data.*.rpz_type",
-          "data_type": "string"
-        },
-        {
-          "column_name": "RPZ Policy Override",
-          "column_order": 2,
-          "data_path": "action_result.data.*.rpz_policy",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ]
-        },
-        {
-          "data_path": "action_result.data.*.primary_type",
-          "data_type": "string"
-        },
-        {
-          "column_name": "Priority",
-          "column_order": 5,
-          "data_path": "action_result.data.*.rpz_priority",
-          "data_type": "numeric"
-        },
-        {
-          "column_name": "Severity",
-          "column_order": 4,
-          "data_path": "action_result.data.*.rpz_severity",
-          "data_type": "string"
-        },
-        {
-          "column_name": "Comment",
-          "column_order": 7,
-          "data_path": "action_result.data.*.comment",
-          "data_type": "string"
-        },
-        {
-          "column_name": "Last Updated",
-          "column_order": 6,
-          "data_path": "action_result.data.*.rpz_last_updated_time",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.data.*.substitute_name",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.parameter.network_view",
-          "data_type": "string",
-          "contains": [
-            "infoblox view"
-          ],
-          "column_name": "Network View",
-          "column_order": 3
-        },
-        {
-          "data_path": "action_result.summary.total_response_policy_zones",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ]
-    },
-    {
-      "action": "list hosts",
-      "description": "List hosts",
-      "type": "investigate",
-      "identifier": "list_hosts",
-      "read_only": true,
-      "parameters": {},
-      "render": {
-        "width": 12,
-        "title": "List Hosts",
-        "type": "table",
-        "height": 5
-      },
-      "versions": "EQ(*)",
-      "output": [
-        {
-          "data_path": "action_result.data.*._ref",
-          "data_type": "string"
-        },
-        {
-          "column_name": "IP",
-          "column_order": 0,
-          "data_path": "action_result.data.*.ip",
-          "data_type": "string",
-          "contains": [
-            "ip"
-          ]
-        },
-        {
-          "column_name": "Host Name",
-          "column_order": 1,
-          "data_path": "action_result.data.*.name",
-          "data_type": "string",
-          "contains":[
-            "host name"
-          ]
-        },
-        {
-          "column_name": "Network View",
-          "column_order": 1,
-          "data_path": "action_result.data.*.view",
-          "data_type": "string",
-          "contains": ["infoblox view"]
-        },
-        {
-          "column_name": "DNS Zone",
-          "column_order": 2,
-          "data_path": "action_result.data.*.zone",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.status",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.message",
-          "data_type": "string"
-        },
-        {
-          "data_path": "action_result.summary.total_hosts",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects",
-          "data_type": "numeric"
-        },
-        {
-          "data_path": "summary.total_objects_successful",
-          "data_type": "numeric"
-        }
-      ]
-    }
-  ]
+    ]
 }
