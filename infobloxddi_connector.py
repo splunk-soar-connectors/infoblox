@@ -132,8 +132,7 @@ class InfobloxddiConnector(BaseConnector):
             return False
 
         # Check if net mask is out of range
-        if (":" in ip_address and net_mask not in range(0, 129)) or ("." in ip_address and
-                                                                     net_mask not in range(0, 33)):
+        if (":" in ip_address and net_mask not in range(0, 129)) or ("." in ip_address and net_mask not in range(0, 33)):
             self.debug_print(consts.INFOBLOX_IP_VALIDATION_FAILED)
             return False
 
@@ -344,10 +343,10 @@ class InfobloxddiConnector(BaseConnector):
         self.save_progress(consts.INFOBLOX_TEST_CONNECTIVITY_MSG)
         self.save_progress("Configured URL: {url}".format(url=self._url))
 
-        self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MSG.format(endpoint=consts.INFOBLOX_LEASE))
+        self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MSG.format(endpoint='/?_schema'))
 
         # Querying endpoint to check connection to device
-        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, method="get", timeout=30)
+        status, response = self._make_rest_call('/?_schema', action_result, method="get", timeout=30)
 
         if phantom.is_fail(status):
             self.save_progress(action_result.get_message())
@@ -387,8 +386,7 @@ class InfobloxddiConnector(BaseConnector):
                                                               consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
         # Make call to get host information
-        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, params=params,
-                                                method="get")
+        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, params=params, method="get")
         # Something went wrong
         if phantom.is_fail(status):
             return action_result.get_status()
@@ -500,8 +498,7 @@ class InfobloxddiConnector(BaseConnector):
 
         for data in lease_response_list:
             # Filter the host information details
-            host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or
-                                                                 host['ipv6addr'] == data['address'])]
+            host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or host['ipv6addr'] == data['address'])]
             if host_data:
                 data['os'] = host_data[0].get('discovered_data', {}).get('os')
             # Converting epoch seconds to "%Y-%m-%d %H:%M:%S" date format
