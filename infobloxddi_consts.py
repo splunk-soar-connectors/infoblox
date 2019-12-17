@@ -1,16 +1,8 @@
-# --
-# File: infoblox/infobloxddi_consts.py
+# File: infobloxddi_consts.py
+# Copyright (c) 2017-2019 Splunk Inc.
 #
-# Copyright (c) Phantom Cyber Corporation, 2017
-#
-# This unpublished material is proprietary to Phantom Cyber.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Phantom Cyber Corporation.
-#
-# --
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
 
 INFOBLOX_CONFIG_USERNAME = "username"
 INFOBLOX_CONFIG_PASSWORD = "password"
@@ -80,7 +72,7 @@ INFOBLOX_ERR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
 INFOBLOX_REST_RESP_OTHER_ERROR_MSG = "Unknown error occurred"
-INFOBLOX_TEST_CONNECTIVITY_MSG = "Logging to device"
+INFOBLOX_TEST_CONNECTIVITY_MSG = "Logging into device"
 INFOBLOX_TEST_CONN_FAIL = "Connectivity test failed"
 INFOBLOX_TEST_CONN_SUCC = "Connectivity test succeeded"
 INFOBLOX_TEST_ENDPOINT_MSG = "Querying endpoint '{endpoint}' to validate credentials"
