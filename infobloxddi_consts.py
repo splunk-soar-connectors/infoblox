@@ -23,6 +23,7 @@ INFOBLOX_JSON_IP = "ip"
 INFOBLOX_JSON_A_IP = "ipv4addr"
 INFOBLOX_JSON_AAAA_IP = "ipv6addr"
 INFOBLOX_JSON_RECORD_NAME = "name"
+INFOBLOX_JSON_NETWORK = "network"
 INFOBLOX_JSON_RP_ZONE = "rp_zone"
 INFOBLOX_JSON_COMMENT = "comment"
 INFOBLOX_JSON_STARTS = "starts"
@@ -66,6 +67,7 @@ INFOBLOX_IP_ENDPOINT = "/record:rpz:cname:ipaddress"
 INFOBLOX_RP_ZONE_DETAILS_ENDPOINT = "/zone_rp"
 INFOBLOX_RECORDS_IPv4_ENDPOINT = "/record:a"
 INFOBLOX_RECORDS_IPv6_ENDPOINT = "/record:aaaa"
+INFOBLOX_RANGE_ENDPOINT = "/range"
 INFOBLOX_LEASE_RETURN_FIELDS = "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid," \
                                "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol," \
                                "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime," \

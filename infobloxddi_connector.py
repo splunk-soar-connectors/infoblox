@@ -9,6 +9,7 @@ import json
 import time
 import socket
 import requests
+import ipaddress
 
 # Phantom imports
 import phantom.app as phantom
@@ -398,6 +399,52 @@ class InfobloxddiConnector(BaseConnector):
 
         self.set_status_save_progress(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCC)
         return action_result.get_status()
+
+    def _get_network_info(self, param):
+        """ To get details about DHCP network(s)
+
+        :param param: dictionary of input parameter
+        :return: status (success/failure)
+        """
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ip = param.get('ip')  # IP or CIDR network format
+        network_view = param.get('network_view')  # Infoblox network view
+
+        search_ip = None  # Only used if the input ip is not in CIDR format
+        params = {}
+
+        # REST API allows for the user to search by the network (if in CIDR notation)
+        # Otherwise, we will need to process all results and return filtered output after the REST call
+        # If no IP is given, return all
+        if ip and self._is_ip(ip):
+            if '/' in ip:  # CIDR Network, send ip to REST API call to search
+                params[consts.INFOBLOX_JSON_NETWORK] = ip
+
+            else:  # Set search IP to use after the REST call if the IP is just an IP
+                search_ip = ip.decode('utf8')  # search_ip needs to be unicode in order to be used by ipaddress library
+
+        if network_view:
+            params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
+
+        status, response = self._make_paged_rest_call(consts.INFOBLOX_RANGE_ENDPOINT, action_result, params, method='get')
+
+        if phantom.is_fail(status):
+            return action_result.get_status()
+
+        for network_info in response:
+            if search_ip:
+                # Filter results of results for networks that match the provided IP
+                if ipaddress.ip_address(search_ip) in ipaddress.ip_network(network_info.get('network')):
+                    action_result.add_data(network_info)
+            else:
+                # Return all results
+                action_result.add_data(network_info)
+
+        action_result.update_summary({'number of matching networks': action_result.get_data_size()})
+
+        return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_system_info(self, param):
         """ To get information about host, i.e. host's state is Free/Active/Static/Expired/Released/Abandoned/Backup/
@@ -999,7 +1046,8 @@ class InfobloxddiConnector(BaseConnector):
             "unblock_domain": self._unblock_domain,
             "list_rpz": self._list_rpz,
             "list_hosts": self._list_hosts,
-            "list_network_view": self._list_network_view
+            "list_network_view": self._list_network_view,
+            "get_network_info": self._get_network_info
         }
 
         action = self.get_action_identifier()
