@@ -307,6 +307,57 @@ class InfobloxddiConnector(BaseConnector):
                                         status=request_obj.status_code,
                                         detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG), response_data
 
+    def _make_paged_rest_call(self, endpoint, action_result, params={}, **rest_call_options):
+        """ Function used to make rest call requests in a paged fashion.
+        This will alleviate errors with getting >1000 results from Infoblox.
+
+        First make the main call with the search parameters.
+        Then keep making the next rest call with the "next_page_id", if it is returned.
+
+        :param endpoint: REST endpoint that appends to the service address
+        :param action_result: Object of ActionResult class
+        :param params: request parameters if method is GET
+        :param rest_call_options: additional options for _make_rest_call
+        :return: status (success/failure) (along with appropriate message), response obtained by making an API call
+        """
+        page_count = 1
+        self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
+
+        params[consts.INFOBLOX_JSON_PAGING] = 1
+        params[consts.INFOBLOX_JSON_RETURN_AS_OBJECT] = 1
+        params[consts.INFOBLOX_JSON_MAX_RESULTS] = 1000
+
+        status, response = self._make_rest_call(endpoint, action_result, params, **rest_call_options)
+
+        if phantom.is_fail(status):
+            return action_result.get_status(), None
+
+        response = response.get(consts.INFOBLOX_RESPONSE_DATA, {})
+
+        combined_response = response.get('result', [])
+        paged_params = {
+            consts.INFOBLOX_JSON_PAGE_ID: response.get('next_page_id', None),
+            consts.INFOBLOX_JSON_PAGING: 1,
+            consts.INFOBLOX_JSON_RETURN_AS_OBJECT: 1
+        }
+
+        while paged_params.get(consts.INFOBLOX_JSON_PAGE_ID) is not None:
+
+            page_count += 1
+            self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
+
+            status, response = self._make_rest_call(endpoint, action_result, paged_params, **rest_call_options)
+
+            if phantom.is_fail(status):
+                return action_result.get_status(), combined_response
+
+            response = response.get(consts.INFOBLOX_RESPONSE_DATA, {})
+
+            combined_response.extend(response.get('result', []))
+            paged_params[consts.INFOBLOX_JSON_PAGE_ID] = response.get('next_page_id', None)
+
+        return phantom.APP_SUCCESS, combined_response
+
     def _logout(self):
         """ Function used to logout from Infoblox Grid Manager. Called from finalize method at the end of each action.
 
@@ -882,16 +933,20 @@ class InfobloxddiConnector(BaseConnector):
         ipv4_hosts_param = {consts.INFOBLOX_JSON_RETURN_FIELDS: "ipv4addr,name,view,zone"}
 
         # Getting list of ipv4 hosts
-        ipv4_hosts_status, ipv4_hosts = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT, action_result,
-                                                             params=ipv4_hosts_param, method="get")
+        ipv4_hosts_status, ipv4_hosts = self._make_paged_rest_call(
+            consts.INFOBLOX_RECORDS_IPv4_ENDPOINT,
+            action_result,
+            params=ipv4_hosts_param,
+            method="get"
+        )
 
-        # Something went wrong while getting rp_zone details
+        # Something went wrong while getting ipv4 host details
         if phantom.is_fail(ipv4_hosts_status):
             self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
-        for ipv4_host in ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]:
+        for ipv4_host in ipv4_hosts:
             # Post processing the output, to change ipv4addr key to IP
             ipv4_host['ip'] = ipv4_host.pop('ipv4addr')
             zone = '.{}'.format(ipv4_host['zone'])
@@ -902,16 +957,20 @@ class InfobloxddiConnector(BaseConnector):
         # Getting list of ipv6 hosts
         ipv6_hosts_param = {consts.INFOBLOX_JSON_RETURN_FIELDS: "ipv6addr,name,view,zone"}
 
-        ipv6_hosts_status, ipv6_hosts = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv6_ENDPOINT, action_result,
-                                                             params=ipv6_hosts_param, method="get")
+        ipv6_hosts_status, ipv6_hosts = self._make_paged_rest_call(
+            consts.INFOBLOX_RECORDS_IPv6_ENDPOINT,
+            action_result,
+            params=ipv6_hosts_param,
+            method="get"
+        )
 
-        # Something went wrong while getting rp_zone details
+        # Something went wrong while getting ipv6 host details
         if phantom.is_fail(ipv6_hosts_status):
             self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
-        for ipv6_host in ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA]:
+        for ipv6_host in ipv6_hosts:
             # Post processing the output, to change ipv4addr key to IP
             ipv6_host['ip'] = ipv6_host.pop('ipv6addr')
             zone = '.{}'.format(ipv6_host['zone'])
@@ -919,8 +978,7 @@ class InfobloxddiConnector(BaseConnector):
                 ipv6_host['name'] = ipv6_host['name'][:-len(zone)]
             action_result.add_data(ipv6_host)
 
-        summary_data[consts.INFOBLOX_TOTAL_HOSTS] = len(ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]) + \
-            len(ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA])
+        summary_data[consts.INFOBLOX_TOTAL_HOSTS] = len(ipv4_hosts) + len(ipv6_hosts)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
