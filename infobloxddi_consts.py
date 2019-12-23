@@ -67,7 +67,7 @@ INFOBLOX_IP_ENDPOINT = "/record:rpz:cname:ipaddress"
 INFOBLOX_RP_ZONE_DETAILS_ENDPOINT = "/zone_rp"
 INFOBLOX_RECORDS_IPv4_ENDPOINT = "/record:a"
 INFOBLOX_RECORDS_IPv6_ENDPOINT = "/record:aaaa"
-INFOBLOX_RANGE_ENDPOINT = "/range"
+INFOBLOX_NETWORK_ENDPOINT = "/network"
 INFOBLOX_LEASE_RETURN_FIELDS = "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid," \
                                "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol," \
                                "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime," \

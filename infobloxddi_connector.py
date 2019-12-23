@@ -428,7 +428,7 @@ class InfobloxddiConnector(BaseConnector):
         if network_view:
             params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
 
-        status, response = self._make_paged_rest_call(consts.INFOBLOX_RANGE_ENDPOINT, action_result, params, method='get')
+        status, response = self._make_paged_rest_call(consts.INFOBLOX_NETWORK_ENDPOINT, action_result, params, method='get')
 
         if phantom.is_fail(status):
             return action_result.get_status()

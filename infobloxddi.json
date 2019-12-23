@@ -127,7 +127,6 @@
                     ]
                 },
                 "network_view": {
-                    "default": "",
                     "description": "Network view",
                     "data_type": "string",
                     "contains": [
@@ -152,16 +151,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.start_addr",
-                    "data_type": "string",
-                    "example_values": [
-                        "10.0.0.1"
-                    ],
-                    "contains": [
-                        "ip"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*._ref",
                     "data_type": "string",
                     "example_values": [
@@ -174,7 +163,7 @@
                     "example_values": [
                         "10.0.0.0/8"
                     ],
-                    "column_name": "Comment",
+                    "column_name": "Network",
                     "column_order": 0
                 },
                 {
@@ -183,18 +172,8 @@
                     "example_values": [
                         "Internal Networks"
                     ],
-                    "column_name": "Comment",
+                    "column_name": "Network View",
                     "column_order": 1
-                },
-                {
-                    "data_path": "action_result.data.*.end_addr",
-                    "data_type": "string",
-                    "example_values": [
-                        "10.0.0.254"
-                    ],
-                    "contains": [
-                        "ip"
-                    ]
                 },
                 {
                     "data_path": "action_result.data.*.comment",
