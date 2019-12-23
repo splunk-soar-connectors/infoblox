@@ -2,7 +2,7 @@
     "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
     "name": "Infoblox DDI",
     "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
-    "publisher": "Phantom",
+    "publisher": "Splunk",
     "package_name": "phantom_infobloxddi",
     "license": "Copyright (c) 2017-2019 Splunk Inc.",
     "main_module": "infobloxddi_connector.pyc",
@@ -12,7 +12,7 @@
     "product_vendor": "Infoblox",
     "product_name": "Infoblox DDI",
     "product_version_regex": ".*",
-    "min_phantom_version": "2.1.467",
+    "min_phantom_version": "4.5.15922
     "logo": "logo_infoblox.svg",
     "logo_dark": "logo_infoblox_dark.svg",
     "configuration": {
