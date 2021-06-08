@@ -1,20 +1,21 @@
 {
     "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
     "name": "Infoblox DDI",
-    "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
+    "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>",
     "publisher": "Splunk",
     "package_name": "phantom_infobloxddi",
-    "license": "Copyright (c) 2017-2019 Splunk Inc.",
-    "main_module": "infobloxddi_connector.pyc",
+    "license": "Copyright (c) 2017-2021 Splunk Inc.",
+    "main_module": "infobloxddi_connector.py",
     "type": "network access control",
-    "app_version": "1.0.12",
+    "app_version": "1.0.13",
     "utctime_updated": "2019-04-30T22:09:29.000000Z",
     "product_vendor": "Infoblox",
     "product_name": "Infoblox DDI",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.5.15922",
+    "min_phantom_version": "4.9.39220",
     "logo": "logo_infoblox.svg",
     "logo_dark": "logo_infoblox_dark.svg",
+    "python_version": "3",
     "configuration": {
         "url": {
             "required": true,
@@ -87,7 +88,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -117,7 +122,6 @@
             "read_only": true,
             "parameters": {
                 "ip": {
-                    "required": false,
                     "primary": true,
                     "description": "IP or IP network (CIDR notation)",
                     "data_type": "string",
@@ -132,7 +136,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 }
             },
             "render": {
@@ -147,7 +152,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
@@ -261,7 +267,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 }
             },
             "render": {
@@ -443,7 +450,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -518,7 +529,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -527,7 +539,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 }
             },
             "render": {
@@ -543,7 +556,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -615,7 +632,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -624,7 +642,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 },
                 "comment": {
                     "description": "Comment (maximum 256 characters)",
@@ -645,7 +664,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -722,7 +745,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -731,7 +755,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 }
             },
             "render": {
@@ -747,7 +772,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -821,7 +850,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -830,7 +860,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 },
                 "comment": {
                     "description": "Comment (maximum 256 characters)",
@@ -851,7 +882,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -884,7 +919,7 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "column_name": "RP Zone",
+                    "column_name": "Rp Zone",
                     "column_order": 1
                 },
                 {
@@ -935,7 +970,7 @@
                     "data_type": "string"
                 },
                 {
-                    "column_name": "FQDN of RPZ",
+                    "column_name": "Fqdn Of Rpz",
                     "column_order": 0,
                     "data_path": "action_result.data.*.fqdn",
                     "data_type": "string",
@@ -958,7 +993,7 @@
                     "data_type": "string"
                 },
                 {
-                    "column_name": "RPZ Policy Override",
+                    "column_name": "Rpz Policy Override",
                     "column_order": 2,
                     "data_path": "action_result.data.*.rpz_policy",
                     "data_type": "string"
@@ -1004,7 +1039,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -1092,7 +1131,7 @@
                     ]
                 },
                 {
-                    "column_name": "DNS Zone",
+                    "column_name": "Dns Zone",
                     "column_order": 2,
                     "data_path": "action_result.data.*.zone",
                     "data_type": "string",
@@ -1104,7 +1143,8 @@
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
