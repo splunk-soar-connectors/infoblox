@@ -730,12 +730,10 @@ class InfobloxddiConnector(BaseConnector):
 
         # Checking if RPZ rule name exists in given rp_zone
         check_rpz_rule_params = {consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name, consts.INFOBLOX_PARAM_ZONE: rp_zone}
-        self.debug_print("KING JOM UNN {}".format(check_rpz_rule_params))
         check_name_details_status, rpz_rule_name_details = self._make_rest_call(consts.INFOBLOX_DOMAIN_ENDPOINT,
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
                                                                                 method="get")
-        self.debug_print("LAALU {}".format(rpz_rule_name_details))
         # Something went wrong while getting details of RPZ rule name
         if phantom.is_fail(check_name_details_status):
             return action_result.get_status()
