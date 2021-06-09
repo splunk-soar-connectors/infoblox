@@ -1,13 +1,13 @@
 {
     "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
     "name": "Infoblox DDI",
-    "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>",
+    "description": "This app supports various containment and investigative actions on Infoblox Grid Manager",
     "publisher": "Splunk",
     "package_name": "phantom_infobloxddi",
     "license": "Copyright (c) 2017-2021 Splunk Inc.",
     "main_module": "infobloxddi_connector.py",
     "type": "network access control",
-    "app_version": "1.0.13",
+    "app_version": "2.0.0",
     "utctime_updated": "2019-04-30T22:09:29.000000Z",
     "product_vendor": "Infoblox",
     "product_name": "Infoblox DDI",
@@ -15,6 +15,9 @@
     "min_phantom_version": "4.9.39220",
     "logo": "logo_infoblox.svg",
     "logo_dark": "logo_infoblox_dark.svg",
+    "latest_tested_versions": [
+        "Infoblox DDI v7.3.9"
+    ],
     "python_version": "3",
     "configuration": {
         "url": {
@@ -1120,7 +1123,7 @@
                 },
                 {
                     "column_name": "Network View",
-                    "column_order": 1,
+                    "column_order": 2,
                     "data_path": "action_result.data.*.view",
                     "data_type": "string",
                     "contains": [
@@ -1131,8 +1134,8 @@
                     ]
                 },
                 {
-                    "column_name": "Dns Zone",
-                    "column_order": 2,
+                    "column_name": "DNS Zone",
+                    "column_order": 3,
                     "data_path": "action_result.data.*.zone",
                     "data_type": "string",
                     "example_values": [
