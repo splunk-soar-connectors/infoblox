@@ -705,7 +705,7 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain = self._handle_py_ver_compat_for_domain(domain_name)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, " Please provide a valid 'domain' parameter. {0}".format(e))
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(e))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 

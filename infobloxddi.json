@@ -6,7 +6,7 @@
     "package_name": "phantom_infobloxddi",
     "license": "Copyright (c) 2017-2021 Splunk Inc.",
     "main_module": "infobloxddi_connector.py",
-    "type": "network access control",
+    "type": "network security",
     "app_version": "2.0.0",
     "utctime_updated": "2019-04-30T22:09:29.000000Z",
     "product_vendor": "Infoblox",
