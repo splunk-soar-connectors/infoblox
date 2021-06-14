@@ -605,6 +605,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -717,6 +721,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -822,6 +830,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -936,6 +948,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
