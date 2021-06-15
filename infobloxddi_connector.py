@@ -1,5 +1,5 @@
 # File: infobloxddi_connector.py
-# Copyright (c) 2017-2019 Splunk Inc.
+# Copyright (c) 2017-2021 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -10,11 +10,13 @@ import time
 import socket
 import requests
 import ipaddress
+import sys
 
 # Phantom imports
 import phantom.app as phantom
 from phantom.base_connector import BaseConnector
 from phantom.action_result import ActionResult
+from bs4 import UnicodeDammit
 
 # Local imports
 import infobloxddi_consts as consts
@@ -80,6 +82,7 @@ class InfobloxddiConnector(BaseConnector):
         self._api_password = None
         self._verify_server_cert = False
         self._sess_obj = None
+        self._python_version = None
         return
 
     def initialize(self):
@@ -91,6 +94,11 @@ class InfobloxddiConnector(BaseConnector):
         """
 
         config = self.get_config()
+
+        try:
+            self._python_version = int(sys.version_info[0])
+        except:
+            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
 
         # Initializing parameters required for connection
         self._url = config[consts.INFOBLOX_CONFIG_URL].strip("/")
@@ -105,6 +113,41 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj = requests.session()
 
         return phantom.APP_SUCCESS
+
+    def _handle_py_ver_compat_for_domain(self, input_str):
+        """
+        This method returns the encoded|original string based on the Python version.
+
+        :param input_str: Input string to be processed
+        :return: input_str in acceptable form based on python version
+        """
+
+        try:
+            # to handle python2 case
+            if input_str and self._python_version < 3:
+                input_str = input_str.decode('utf-8').encode('idna')
+            # to handle python3 case
+            else:
+                input_str = input_str.encode('idna').decode('utf-8')
+        except:
+            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
+
+        return input_str
+
+    def _handle_py_ver_compat_for_input_str(self, input_str):
+        """
+        This method returns the encoded|original string based on the Python version.
+        :param input_str: Input string to be processed
+        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
+        """
+        try:
+            if input_str and self._python_version < 3:
+                input_str = UnicodeDammit(input_str).unicode_markup
+
+        except:
+            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
+
+        return input_str
 
     def _is_ip(self, cidr_ip_address):
         """ Function that checks given address and return True if address is valid IPv4/IPv6 address.
@@ -423,7 +466,7 @@ class InfobloxddiConnector(BaseConnector):
                 params[consts.INFOBLOX_JSON_NETWORK] = ip
 
             else:  # Set search IP to use after the REST call if the IP is just an IP
-                search_ip = ip.decode('utf8')  # search_ip needs to be unicode in order to be used by ipaddress library
+                search_ip = self._handle_py_ver_compat_for_input_str(ip)  # search_ip needs to be unicode in order to be used by ipaddress library
 
         if network_view:
             params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
@@ -588,7 +631,9 @@ class InfobloxddiConnector(BaseConnector):
 
         for data in lease_response_list:
             # Filter the host information details
-            host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or host['ipv6addr'] == data['address'])]
+            host_data = None
+            if host_response_list:
+                host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or host['ipv6addr'] == data['address'])]
             if host_data:
                 data['os'] = host_data[0].get('discovered_data', {}).get('os')
             # Converting epoch seconds to "%Y-%m-%d %H:%M:%S" date format
@@ -657,7 +702,11 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
-        domain = domain_name.decode('utf-8').encode('idna')
+        try:
+            domain = self._handle_py_ver_compat_for_domain(domain_name)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(e))
+
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameters
@@ -685,7 +734,6 @@ class InfobloxddiConnector(BaseConnector):
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
                                                                                 method="get")
-
         # Something went wrong while getting details of RPZ rule name
         if phantom.is_fail(check_name_details_status):
             return action_result.get_status()
@@ -877,7 +925,10 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
-        domain = domain_name.decode('utf-8').encode('idna')
+        try:
+            domain = self._handle_py_ver_compat_for_domain(domain_name)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, " Please provide a valid 'domain' parameter. {0}".format(e))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -1073,19 +1124,18 @@ class InfobloxddiConnector(BaseConnector):
 
 if __name__ == "__main__":
 
-    import sys
     import pudb
 
     pudb.set_trace()
     if len(sys.argv) < 2:
-        print "No test json specified as input"
+        print("No test json specified as input")
         exit(0)
     with open(sys.argv[1]) as f:
         in_json = f.read()
         in_json = json.loads(in_json)
-        print json.dumps(in_json, indent=4)
+        print(json.dumps(in_json, indent=4))
         connector = InfobloxddiConnector()
         connector.print_progress_message = True
         return_value = connector._handle_action(json.dumps(in_json), None)
-        print json.dumps(json.loads(return_value), indent=4)
+        print(json.dumps(json.loads(return_value), indent=4))
     exit(0)
