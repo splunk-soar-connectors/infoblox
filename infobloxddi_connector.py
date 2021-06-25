@@ -1,27 +1,22 @@
-# --
-# File: infoblox/infobloxddi_connector.py
+# File: infobloxddi_connector.py
+# Copyright (c) 2017-2021 Splunk Inc.
 #
-# Copyright (c) Phantom Cyber Corporation, 2017-2018
-#
-# This unpublished material is proprietary to Phantom Cyber.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Phantom Cyber Corporation.
-#
-# --
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
 
 # Standard library imports
 import json
 import time
 import socket
 import requests
+import ipaddress
+import sys
 
 # Phantom imports
 import phantom.app as phantom
 from phantom.base_connector import BaseConnector
 from phantom.action_result import ActionResult
+from bs4 import UnicodeDammit
 
 # Local imports
 import infobloxddi_consts as consts
@@ -87,6 +82,7 @@ class InfobloxddiConnector(BaseConnector):
         self._api_password = None
         self._verify_server_cert = False
         self._sess_obj = None
+        self._python_version = None
         return
 
     def initialize(self):
@@ -98,6 +94,11 @@ class InfobloxddiConnector(BaseConnector):
         """
 
         config = self.get_config()
+
+        try:
+            self._python_version = int(sys.version_info[0])
+        except:
+            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
 
         # Initializing parameters required for connection
         self._url = config[consts.INFOBLOX_CONFIG_URL].strip("/")
@@ -112,6 +113,41 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj = requests.session()
 
         return phantom.APP_SUCCESS
+
+    def _handle_py_ver_compat_for_domain(self, input_str):
+        """
+        This method returns the encoded|original string based on the Python version.
+
+        :param input_str: Input string to be processed
+        :return: input_str in acceptable form based on python version
+        """
+
+        try:
+            # to handle python2 case
+            if input_str and self._python_version < 3:
+                input_str = input_str.decode('utf-8').encode('idna')
+            # to handle python3 case
+            else:
+                input_str = input_str.encode('idna').decode('utf-8')
+        except:
+            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
+
+        return input_str
+
+    def _handle_py_ver_compat_for_input_str(self, input_str):
+        """
+        This method returns the encoded|original string based on the Python version.
+        :param input_str: Input string to be processed
+        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
+        """
+        try:
+            if input_str and self._python_version < 3:
+                input_str = UnicodeDammit(input_str).unicode_markup
+
+        except:
+            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
+
+        return input_str
 
     def _is_ip(self, cidr_ip_address):
         """ Function that checks given address and return True if address is valid IPv4/IPv6 address.
@@ -132,8 +168,7 @@ class InfobloxddiConnector(BaseConnector):
             return False
 
         # Check if net mask is out of range
-        if (":" in ip_address and net_mask not in range(0, 129)) or ("." in ip_address and
-                                                                     net_mask not in range(0, 33)):
+        if (":" in ip_address and net_mask not in range(0, 129)) or ("." in ip_address and net_mask not in range(0, 33)):
             self.debug_print(consts.INFOBLOX_IP_VALIDATION_FAILED)
             return False
 
@@ -316,6 +351,57 @@ class InfobloxddiConnector(BaseConnector):
                                         status=request_obj.status_code,
                                         detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG), response_data
 
+    def _make_paged_rest_call(self, endpoint, action_result, params={}, **rest_call_options):
+        """ Function used to make rest call requests in a paged fashion.
+        This will alleviate errors with getting >1000 results from Infoblox.
+
+        First make the main call with the search parameters.
+        Then keep making the next rest call with the "next_page_id", if it is returned.
+
+        :param endpoint: REST endpoint that appends to the service address
+        :param action_result: Object of ActionResult class
+        :param params: request parameters if method is GET
+        :param rest_call_options: additional options for _make_rest_call
+        :return: status (success/failure) (along with appropriate message), response obtained by making an API call
+        """
+        page_count = 1
+        self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
+
+        params[consts.INFOBLOX_JSON_PAGING] = 1
+        params[consts.INFOBLOX_JSON_RETURN_AS_OBJECT] = 1
+        params[consts.INFOBLOX_JSON_MAX_RESULTS] = 1000
+
+        status, response = self._make_rest_call(endpoint, action_result, params, **rest_call_options)
+
+        if phantom.is_fail(status):
+            return action_result.get_status(), None
+
+        response = response.get(consts.INFOBLOX_RESPONSE_DATA, {})
+
+        combined_response = response.get('result', [])
+        paged_params = {
+            consts.INFOBLOX_JSON_PAGE_ID: response.get('next_page_id', None),
+            consts.INFOBLOX_JSON_PAGING: 1,
+            consts.INFOBLOX_JSON_RETURN_AS_OBJECT: 1
+        }
+
+        while paged_params.get(consts.INFOBLOX_JSON_PAGE_ID) is not None:
+
+            page_count += 1
+            self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
+
+            status, response = self._make_rest_call(endpoint, action_result, paged_params, **rest_call_options)
+
+            if phantom.is_fail(status):
+                return action_result.get_status(), combined_response
+
+            response = response.get(consts.INFOBLOX_RESPONSE_DATA, {})
+
+            combined_response.extend(response.get('result', []))
+            paged_params[consts.INFOBLOX_JSON_PAGE_ID] = response.get('next_page_id', None)
+
+        return phantom.APP_SUCCESS, combined_response
+
     def _logout(self):
         """ Function used to logout from Infoblox Grid Manager. Called from finalize method at the end of each action.
 
@@ -344,10 +430,10 @@ class InfobloxddiConnector(BaseConnector):
         self.save_progress(consts.INFOBLOX_TEST_CONNECTIVITY_MSG)
         self.save_progress("Configured URL: {url}".format(url=self._url))
 
-        self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MSG.format(endpoint=consts.INFOBLOX_LEASE))
+        self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MSG.format(endpoint='/?_schema'))
 
         # Querying endpoint to check connection to device
-        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, method="get", timeout=30)
+        status, response = self._make_rest_call('/?_schema', action_result, method="get", timeout=30)
 
         if phantom.is_fail(status):
             self.save_progress(action_result.get_message())
@@ -356,6 +442,52 @@ class InfobloxddiConnector(BaseConnector):
 
         self.set_status_save_progress(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCC)
         return action_result.get_status()
+
+    def _get_network_info(self, param):
+        """ To get details about DHCP network(s)
+
+        :param param: dictionary of input parameter
+        :return: status (success/failure)
+        """
+
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ip = param.get('ip')  # IP or CIDR network format
+        network_view = param.get('network_view')  # Infoblox network view
+
+        search_ip = None  # Only used if the input ip is not in CIDR format
+        params = {}
+
+        # REST API allows for the user to search by the network (if in CIDR notation)
+        # Otherwise, we will need to process all results and return filtered output after the REST call
+        # If no IP is given, return all
+        if ip and self._is_ip(ip):
+            if '/' in ip:  # CIDR Network, send ip to REST API call to search
+                params[consts.INFOBLOX_JSON_NETWORK] = ip
+
+            else:  # Set search IP to use after the REST call if the IP is just an IP
+                search_ip = self._handle_py_ver_compat_for_input_str(ip)  # search_ip needs to be unicode in order to be used by ipaddress library
+
+        if network_view:
+            params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
+
+        status, response = self._make_paged_rest_call(consts.INFOBLOX_NETWORK_ENDPOINT, action_result, params, method='get')
+
+        if phantom.is_fail(status):
+            return action_result.get_status()
+
+        for network_info in response:
+            if search_ip:
+                # Filter results of results for networks that match the provided IP
+                if ipaddress.ip_address(search_ip) in ipaddress.ip_network(network_info.get('network')):
+                    action_result.add_data(network_info)
+            else:
+                # Return all results
+                action_result.add_data(network_info)
+
+        action_result.update_summary({'number of matching networks': action_result.get_data_size()})
+
+        return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_system_info(self, param):
         """ To get information about host, i.e. host's state is Free/Active/Static/Expired/Released/Abandoned/Backup/
@@ -387,8 +519,7 @@ class InfobloxddiConnector(BaseConnector):
                                                               consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
         # Make call to get host information
-        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, params=params,
-                                                method="get")
+        status, response = self._make_rest_call(consts.INFOBLOX_LEASE, action_result, params=params, method="get")
         # Something went wrong
         if phantom.is_fail(status):
             return action_result.get_status()
@@ -500,8 +631,9 @@ class InfobloxddiConnector(BaseConnector):
 
         for data in lease_response_list:
             # Filter the host information details
-            host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or
-                                                                 host['ipv6addr'] == data['address'])]
+            host_data = None
+            if host_response_list:
+                host_data = [host for host in host_response_list if (host['ipv4addr'] == data['address'] or host['ipv6addr'] == data['address'])]
             if host_data:
                 data['os'] = host_data[0].get('discovered_data', {}).get('os')
             # Converting epoch seconds to "%Y-%m-%d %H:%M:%S" date format
@@ -570,7 +702,11 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
-        domain = domain_name.decode('utf-8').encode('idna')
+        try:
+            domain = self._handle_py_ver_compat_for_domain(domain_name)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(e))
+
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameters
@@ -598,7 +734,6 @@ class InfobloxddiConnector(BaseConnector):
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
                                                                                 method="get")
-
         # Something went wrong while getting details of RPZ rule name
         if phantom.is_fail(check_name_details_status):
             return action_result.get_status()
@@ -790,7 +925,10 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
-        domain = domain_name.decode('utf-8').encode('idna')
+        try:
+            domain = self._handle_py_ver_compat_for_domain(domain_name)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, " Please provide a valid 'domain' parameter. {0}".format(e))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -893,16 +1031,20 @@ class InfobloxddiConnector(BaseConnector):
         ipv4_hosts_param = {consts.INFOBLOX_JSON_RETURN_FIELDS: "ipv4addr,name,view,zone"}
 
         # Getting list of ipv4 hosts
-        ipv4_hosts_status, ipv4_hosts = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT, action_result,
-                                                             params=ipv4_hosts_param, method="get")
+        ipv4_hosts_status, ipv4_hosts = self._make_paged_rest_call(
+            consts.INFOBLOX_RECORDS_IPv4_ENDPOINT,
+            action_result,
+            params=ipv4_hosts_param,
+            method="get"
+        )
 
-        # Something went wrong while getting rp_zone details
+        # Something went wrong while getting ipv4 host details
         if phantom.is_fail(ipv4_hosts_status):
             self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
-        for ipv4_host in ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]:
+        for ipv4_host in ipv4_hosts:
             # Post processing the output, to change ipv4addr key to IP
             ipv4_host['ip'] = ipv4_host.pop('ipv4addr')
             zone = '.{}'.format(ipv4_host['zone'])
@@ -913,16 +1055,20 @@ class InfobloxddiConnector(BaseConnector):
         # Getting list of ipv6 hosts
         ipv6_hosts_param = {consts.INFOBLOX_JSON_RETURN_FIELDS: "ipv6addr,name,view,zone"}
 
-        ipv6_hosts_status, ipv6_hosts = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv6_ENDPOINT, action_result,
-                                                             params=ipv6_hosts_param, method="get")
+        ipv6_hosts_status, ipv6_hosts = self._make_paged_rest_call(
+            consts.INFOBLOX_RECORDS_IPv6_ENDPOINT,
+            action_result,
+            params=ipv6_hosts_param,
+            method="get"
+        )
 
-        # Something went wrong while getting rp_zone details
+        # Something went wrong while getting ipv6 host details
         if phantom.is_fail(ipv6_hosts_status):
             self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
-        for ipv6_host in ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA]:
+        for ipv6_host in ipv6_hosts:
             # Post processing the output, to change ipv4addr key to IP
             ipv6_host['ip'] = ipv6_host.pop('ipv6addr')
             zone = '.{}'.format(ipv6_host['zone'])
@@ -930,8 +1076,7 @@ class InfobloxddiConnector(BaseConnector):
                 ipv6_host['name'] = ipv6_host['name'][:-len(zone)]
             action_result.add_data(ipv6_host)
 
-        summary_data[consts.INFOBLOX_TOTAL_HOSTS] = len(ipv4_hosts[consts.INFOBLOX_RESPONSE_DATA]) + \
-            len(ipv6_hosts[consts.INFOBLOX_RESPONSE_DATA])
+        summary_data[consts.INFOBLOX_TOTAL_HOSTS] = len(ipv4_hosts) + len(ipv6_hosts)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -952,7 +1097,8 @@ class InfobloxddiConnector(BaseConnector):
             "unblock_domain": self._unblock_domain,
             "list_rpz": self._list_rpz,
             "list_hosts": self._list_hosts,
-            "list_network_view": self._list_network_view
+            "list_network_view": self._list_network_view,
+            "get_network_info": self._get_network_info
         }
 
         action = self.get_action_identifier()
@@ -978,19 +1124,18 @@ class InfobloxddiConnector(BaseConnector):
 
 if __name__ == "__main__":
 
-    import sys
     import pudb
 
     pudb.set_trace()
     if len(sys.argv) < 2:
-        print "No test json specified as input"
+        print("No test json specified as input")
         exit(0)
     with open(sys.argv[1]) as f:
         in_json = f.read()
         in_json = json.loads(in_json)
-        print json.dumps(in_json, indent=4)
+        print(json.dumps(in_json, indent=4))
         connector = InfobloxddiConnector()
         connector.print_progress_message = True
         return_value = connector._handle_action(json.dumps(in_json), None)
-        print json.dumps(json.loads(return_value), indent=4)
+        print(json.dumps(json.loads(return_value), indent=4))
     exit(0)

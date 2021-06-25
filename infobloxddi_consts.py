@@ -1,16 +1,8 @@
-# --
-# File: infoblox/infobloxddi_consts.py
+# File: infobloxddi_consts.py
+# Copyright (c) 2017-2021 Splunk Inc.
 #
-# Copyright (c) Phantom Cyber Corporation, 2017-2018
-#
-# This unpublished material is proprietary to Phantom Cyber.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Phantom Cyber Corporation.
-#
-# --
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
 
 INFOBLOX_CONFIG_USERNAME = "username"
 INFOBLOX_CONFIG_PASSWORD = "password"
@@ -19,6 +11,10 @@ INFOBLOX_CONFIG_VERIFY_SERVER_CERT = "verify_server_cert"
 INFOBLOX_JSON_IP_HOSTNAME = "ip_hostname"
 INFOBLOX_JSON_NETWORK_VIEW = "network_view"
 INFOBLOX_JSON_RETURN_FIELDS = "_return_fields"
+INFOBLOX_JSON_PAGING = "_paging"
+INFOBLOX_JSON_RETURN_AS_OBJECT = "_return_as_object"
+INFOBLOX_JSON_MAX_RESULTS = "_max_results"
+INFOBLOX_JSON_PAGE_ID = "_page_id"
 INFOBLOX_JSON_ADDRESS = "address"
 INFOBLOX_JSON_CLIENT_HOSTNAME = "client_hostname"
 INFOBLOX_JSON_CLTT = "cltt"
@@ -27,6 +23,7 @@ INFOBLOX_JSON_IP = "ip"
 INFOBLOX_JSON_A_IP = "ipv4addr"
 INFOBLOX_JSON_AAAA_IP = "ipv6addr"
 INFOBLOX_JSON_RECORD_NAME = "name"
+INFOBLOX_JSON_NETWORK = "network"
 INFOBLOX_JSON_RP_ZONE = "rp_zone"
 INFOBLOX_JSON_COMMENT = "comment"
 INFOBLOX_JSON_STARTS = "starts"
@@ -52,6 +49,7 @@ INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR = 500
 INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MSG = "Internal server error"
 INFOBLOX_ERR_API_UNSUPPORTED_METHOD = "Unsupported method {method}"
 INFOBLOX_EXCEPTION_OCCURRED = "Exception occurred"
+INFOBLOX_PAGE_COUNT = "Making paged request... #{0}"
 INFOBLOX_PARAM_VIEW = "view"
 INFOBLOX_PARAM_CANONICAL = "canonical"
 INFOBLOX_PARAM_FQDN = "fqdn"
@@ -69,6 +67,7 @@ INFOBLOX_IP_ENDPOINT = "/record:rpz:cname:ipaddress"
 INFOBLOX_RP_ZONE_DETAILS_ENDPOINT = "/zone_rp"
 INFOBLOX_RECORDS_IPv4_ENDPOINT = "/record:a"
 INFOBLOX_RECORDS_IPv6_ENDPOINT = "/record:aaaa"
+INFOBLOX_NETWORK_ENDPOINT = "/network"
 INFOBLOX_LEASE_RETURN_FIELDS = "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid," \
                                "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol," \
                                "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime," \
@@ -80,7 +79,7 @@ INFOBLOX_ERR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
 INFOBLOX_REST_RESP_OTHER_ERROR_MSG = "Unknown error occurred"
-INFOBLOX_TEST_CONNECTIVITY_MSG = "Logging to device"
+INFOBLOX_TEST_CONNECTIVITY_MSG = "Logging into device"
 INFOBLOX_TEST_CONN_FAIL = "Connectivity test failed"
 INFOBLOX_TEST_CONN_SUCC = "Connectivity test succeeded"
 INFOBLOX_TEST_ENDPOINT_MSG = "Querying endpoint '{endpoint}' to validate credentials"

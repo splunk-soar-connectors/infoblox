@@ -1,20 +1,24 @@
 {
     "appid": "5ec38a6e-18c3-4cc3-ab47-2754b56aea50",
     "name": "Infoblox DDI",
-    "description": "This app supports various <b>containment</b> and <b>investigative</b> actions on <b>Infoblox Grid Manager</b>.",
-    "publisher": "Phantom",
+    "description": "This app supports various containment and investigative actions on Infoblox Grid Manager",
+    "publisher": "Splunk",
     "package_name": "phantom_infobloxddi",
-    "license": "Copyright (c) Phantom Cyber Corporation, 2017-2018",
-    "main_module": "infobloxddi_connector.pyc",
-    "type": "network access control",
-    "app_version": "1.0.10",
-    "utctime_updated": "2018-01-26T00:48:15.000000Z",
+    "license": "Copyright (c) 2017-2021 Splunk Inc.",
+    "main_module": "infobloxddi_connector.py",
+    "type": "network security",
+    "app_version": "2.0.2",
+    "utctime_updated": "2021-06-25T07:06:58.000000Z",
     "product_vendor": "Infoblox",
     "product_name": "Infoblox DDI",
     "product_version_regex": ".*",
-    "min_phantom_version": "2.1.467",
+    "min_phantom_version": "4.9.39220",
     "logo": "logo_infoblox.svg",
     "logo_dark": "logo_infoblox_dark.svg",
+    "latest_tested_versions": [
+        "Infoblox DDI v7.3.9"
+    ],
+    "python_version": "3",
     "configuration": {
         "url": {
             "required": true,
@@ -87,7 +91,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -107,6 +115,134 @@
                 }
             ],
             "versions": "EQ(*)"
+        },
+        {
+            "action": "get network info",
+            "description": "Get network information",
+            "verbose": "Get network information for an IP or IP range (in CIDR notation). If an IP is not provided, return all network ranges.",
+            "type": "investigate",
+            "identifier": "get_network_info",
+            "read_only": true,
+            "parameters": {
+                "ip": {
+                    "primary": true,
+                    "description": "IP or IP network (CIDR notation)",
+                    "data_type": "string",
+                    "order": 0,
+                    "contains": [
+                        "ip"
+                    ]
+                },
+                "network_view": {
+                    "description": "Network view",
+                    "data_type": "string",
+                    "contains": [
+                        "infoblox view"
+                    ],
+                    "order": 1,
+                    "primary": true
+                }
+            },
+            "render": {
+                "width": 12,
+                "title": "Get Network Info",
+                "type": "table",
+                "height": 5
+            },
+            "versions": "EQ(*)",
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*._ref",
+                    "data_type": "string",
+                    "example_values": [
+                        "range/p2fjPMq1YiigJPi6hwyaO11wxQVQ92lm0BV3tHHshOy70emcTp8A:10.0.0.1/10.254.254.254/Internal%20Networks"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.network",
+                    "data_type": "string",
+                    "example_values": [
+                        "10.0.0.0/8"
+                    ],
+                    "column_name": "Network",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.data.*.network_view",
+                    "data_type": "string",
+                    "example_values": [
+                        "Internal Networks"
+                    ],
+                    "column_name": "Network View",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.comment",
+                    "data_type": "string",
+                    "example_values": [
+                        "Example of a comment"
+                    ],
+                    "column_name": "Comment",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Number of matching networks: 1"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.number of matching networks",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.ip",
+                    "data_type": "string",
+                    "example_values": [
+                        "10.0.0.0/8",
+                        "10.0.0.5"
+                    ],
+                    "contains": [
+                        "ip"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.network_view",
+                    "data_type": "string",
+                    "example_values": [
+                        "Internal Networks"
+                    ],
+                    "contains": [
+                        "infoblox view"
+                    ]
+                }
+            ]
         },
         {
             "action": "get system info",
@@ -134,7 +270,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 }
             },
             "render": {
@@ -316,7 +453,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -391,7 +532,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -400,7 +542,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 }
             },
             "render": {
@@ -416,7 +559,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -458,6 +605,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -488,7 +639,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -497,7 +649,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 },
                 "comment": {
                     "description": "Comment (maximum 256 characters)",
@@ -518,7 +671,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -564,6 +721,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -595,7 +756,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -604,7 +766,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 }
             },
             "render": {
@@ -620,7 +783,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -663,6 +830,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -694,7 +865,8 @@
                     "contains": [
                         "infoblox rpz"
                     ],
-                    "order": 1
+                    "order": 1,
+                    "primary": true
                 },
                 "network_view": {
                     "default": "default",
@@ -703,7 +875,8 @@
                     "contains": [
                         "infoblox view"
                     ],
-                    "order": 2
+                    "order": 2,
+                    "primary": true
                 },
                 "comment": {
                     "description": "Comment (maximum 256 characters)",
@@ -724,7 +897,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -771,6 +948,10 @@
                 {
                     "data_path": "summary.total_objects_successful",
                     "data_type": "numeric"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 }
             ],
             "versions": "EQ(*)",
@@ -877,7 +1058,11 @@
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
@@ -923,7 +1108,10 @@
             "output": [
                 {
                     "data_path": "action_result.data.*._ref",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "record:a/p2fjPMq1YiigJPi6hwyaO11wxQVQ92lm0BV3tHHshOy70emcTp8AfYSQufYSQu23:test.example.com/External%20DNS"
+                    ]
                 },
                 {
                     "column_name": "IP",
@@ -932,6 +1120,9 @@
                     "data_type": "string",
                     "contains": [
                         "ip"
+                    ],
+                    "example_values": [
+                        "192.168.1.15"
                     ]
                 },
                 {
@@ -941,42 +1132,67 @@
                     "data_type": "string",
                     "contains": [
                         "host name"
+                    ],
+                    "example_values": [
+                        "test"
                     ]
                 },
                 {
                     "column_name": "Network View",
-                    "column_order": 1,
+                    "column_order": 2,
                     "data_path": "action_result.data.*.view",
                     "data_type": "string",
                     "contains": [
                         "infoblox view"
+                    ],
+                    "example_values": [
+                        "External DNS"
                     ]
                 },
                 {
                     "column_name": "DNS Zone",
-                    "column_order": 2,
+                    "column_order": 3,
                     "data_path": "action_result.data.*.zone",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "example.com"
+                    ]
                 },
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Total hosts: 1122"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.total_hosts",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1122
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ]
         }
