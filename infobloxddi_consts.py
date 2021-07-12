@@ -4,10 +4,13 @@
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
 
+# Json keys specific to the app's config parameters
 INFOBLOX_CONFIG_USERNAME = "username"
 INFOBLOX_CONFIG_PASSWORD = "password"
 INFOBLOX_CONFIG_URL = "url"
 INFOBLOX_CONFIG_VERIFY_SERVER_CERT = "verify_server_cert"
+
+# Json keys specific to the action's input parameters and the output result
 INFOBLOX_JSON_IP_HOSTNAME = "ip_hostname"
 INFOBLOX_JSON_NETWORK_VIEW = "network_view"
 INFOBLOX_JSON_RETURN_FIELDS = "_return_fields"
@@ -33,6 +36,8 @@ INFOBLOX_JSON_HARDWARE = "hardware"
 INFOBLOX_JSON_OS = "os"
 INFOBLOX_JSON_PROTOCOL = "protocol"
 INFOBLOX_JSON_CONTENT_TYPE = "Content-Type"
+
+# Respose status codes and messages
 INFOBLOX_REST_RESP_SUCCESS = 200
 INFOBLOX_REST_RESP_CREATE_SUCCESS = 201
 INFOBLOX_REST_RESP_BAD_REQUEST = 400
@@ -47,6 +52,7 @@ INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED = 405
 INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED_MSG = "Method not allowed"
 INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR = 500
 INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MSG = "Internal server error"
+
 INFOBLOX_ERR_API_UNSUPPORTED_METHOD = "Unsupported method {method}"
 INFOBLOX_EXCEPTION_OCCURRED = "Exception occurred"
 INFOBLOX_PAGE_COUNT = "Making paged request... #{0}"
@@ -58,6 +64,8 @@ INFOBLOX_NETWORK_VIEW_DEFAULT = "default"
 INFOBLOX_RPZ_RULE_NAME = "name"
 INFOBLOX_RPZ_POLICY = "rpz_policy"
 INFOBLOX_LAST_UPDATED_TIME = "rpz_last_updated_time"
+
+# Endpoints
 INFOBLOX_BASE_ENDPOINT = "/wapi/v2.3.1"
 INFOBLOX_NETWORK_VIEW = "/networkview"
 INFOBLOX_LEASE = "/lease"
@@ -68,6 +76,8 @@ INFOBLOX_RP_ZONE_DETAILS_ENDPOINT = "/zone_rp"
 INFOBLOX_RECORDS_IPv4_ENDPOINT = "/record:a"
 INFOBLOX_RECORDS_IPv6_ENDPOINT = "/record:aaaa"
 INFOBLOX_NETWORK_ENDPOINT = "/network"
+
+# Return fields
 INFOBLOX_LEASE_RETURN_FIELDS = "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid," \
                                "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol," \
                                "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime," \
@@ -75,10 +85,15 @@ INFOBLOX_LEASE_RETURN_FIELDS = "binding_state,starts,ends,address,billing_class,
                                "on_expiry,on_release"
 INFOBLOX_RECORD_A_RETURN_FIELDS = "ipv4addr,name,view,zone,discovered_data"
 INFOBLOX_RECORD_AAAA_RETURN_FIELDS = "ipv6addr,name,view,zone,discovered_data"
+
+# Status messages for the application
+INFOBLOX_ERR_CODE_UNAVAILABLE = "Error code unavailable"
+INFOBLOX_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or the action parameters."
+INFOBLOX_EXCEPTION_TYPE_ERR = "Error occurred while connecting to the Infoblox server. Please check the asset configuration and|or the action parameters."
 INFOBLOX_ERR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
-INFOBLOX_REST_RESP_OTHER_ERROR_MSG = "Unknown error occurred"
+INFOBLOX_REST_RESP_OTHER_ERR_MSG = "Unknown error occurred"
 INFOBLOX_TEST_CONNECTIVITY_MSG = "Logging into device"
 INFOBLOX_TEST_CONN_FAIL = "Connectivity test failed"
 INFOBLOX_TEST_CONN_SUCC = "Connectivity test succeeded"
@@ -91,11 +106,11 @@ belongs to non-default network view"
 INFOBLOX_LIST_RP_ZONE_PARAMS = "rpz_policy,fqdn,rpz_severity,disable,rpz_type,primary_type,ns_group,network_view,\
 rpz_priority,rpz_last_updated_time,comment,substitute_name"
 INFOBLOX_BLOCK_POLICY_RULE = "GIVEN"
-INFOBLOX_LIST_RP_ZONE_ERROR = "Error while getting Response Policy Zone details"
-INFOBLOX_LIST_HOSTS_ERROR = "Error while getting list of hosts"
-INFOBLOX_RP_ZONE_POLICY_RULE_ERROR = "Policy rule of the Response Policy Zone must be 'GIVEN'.\nFound: '{rule_name}'"
+INFOBLOX_LIST_RP_ZONE_ERR = "Error while getting Response Policy Zone details"
+INFOBLOX_LIST_HOSTS_ERR = "Error while getting list of hosts"
+INFOBLOX_RP_ZONE_POLICY_RULE_ERR = "Policy rule of the Response Policy Zone must be 'GIVEN'.\nFound: '{rule_name}'"
 INFOBLOX_RP_ZONE_NOT_EXISTS = "Response Policy Zone with FQDN: '{fqdn_name}' does not exist"
-INFOBLOX_VALIDATE_MESSAGE = "Validating Response Policy Zone name and RPZ rule name"
+INFOBLOX_VALIDATE_MSG = "Validating Response Policy Zone name and RPZ rule name"
 INFOBLOX_DOMAIN_ALREADY_BLOCKED = "Domain already blocked"
 INFOBLOX_IP_ALREADY_BLOCKED = "IP/CIDR already blocked"
 INFOBLOX_BLOCK_DOMAIN_SUCCESS = "Domain blocked successfully"
