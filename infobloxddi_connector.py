@@ -83,6 +83,7 @@ class InfobloxddiConnector(BaseConnector):
         self._verify_server_cert = False
         self._sess_obj = None
         self._python_version = None
+        self._state = None
         return
 
     def initialize(self):
@@ -94,6 +95,7 @@ class InfobloxddiConnector(BaseConnector):
         """
 
         config = self.get_config()
+        self._state = self.load_state()
 
         try:
             self._python_version = int(sys.version_info[0])
@@ -113,6 +115,34 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj = requests.session()
 
         return phantom.APP_SUCCESS
+
+    def _get_error_message_from_exception(self, e):
+        """ This method is used to get appropriate error message from the exception.
+        :param e: Exception object
+        :return: error message
+        """
+
+        error_code = consts.INFOBLOX_ERR_CODE_UNAVAILABLE
+        error_msg = consts.INFOBLOX_ERR_MSG_UNAVAILABLE
+
+        try:
+            if e.args:
+                if len(e.args) > 1:
+                    error_code = e.args[0]
+                    error_msg = e.args[1]
+                elif len(e.args) == 1:
+                    error_msg = e.args[0]
+        except:
+            pass
+
+        try:
+            error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
+        except TypeError:
+            error_msg = consts.INFOBLOX_EXCEPTION_TYPE_ERR
+        except:
+            pass
+
+        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
 
     def _handle_py_ver_compat_for_domain(self, input_str):
         """
@@ -159,7 +189,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             ip_address, net_mask = _break_ip_address(cidr_ip_address)
         except Exception as e:
-            self.debug_print(consts.INFOBLOX_IP_VALIDATION_FAILED, e)
+            error_msg = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".format(consts.INFOBLOX_IP_VALIDATION_FAILED, error_msg))
             return False
 
         # Validate IP address
@@ -191,13 +222,15 @@ class InfobloxddiConnector(BaseConnector):
         })
 
         # Getting rp_zone details
-        rp_zone_details_status, rpz_zone_details = self._make_rest_call(consts.INFOBLOX_RP_ZONE_DETAILS_ENDPOINT,
-                                                                        action_result, params=zone_filter_params,
-                                                                        method="get")
+        rp_zone_details_status, rpz_zone_details = self._make_paged_rest_call(
+            consts.INFOBLOX_RP_ZONE_DETAILS_ENDPOINT,
+            action_result,
+            params=zone_filter_params,
+            method="get")
 
         # Something went wrong while getting rp_zone details
         if phantom.is_fail(rp_zone_details_status):
-            self.debug_print(consts.INFOBLOX_LIST_RP_ZONE_ERROR)
+            self.debug_print(consts.INFOBLOX_LIST_RP_ZONE_ERR)
             return action_result.get_status(), None
 
         return phantom.APP_SUCCESS, rpz_zone_details
@@ -219,7 +252,7 @@ class InfobloxddiConnector(BaseConnector):
             return action_result.get_status()
 
         # Provided response policy zone does not exist
-        if not rp_zone_details.get(consts.INFOBLOX_RESPONSE_DATA):
+        if not rp_zone_details:
             self.debug_print(consts.INFOBLOX_RP_ZONE_NOT_EXISTS.format(fqdn_name=zone_details_param[
                 consts.INFOBLOX_PARAM_FQDN
             ]))
@@ -228,15 +261,15 @@ class InfobloxddiConnector(BaseConnector):
                 fqdn_name=zone_details_param[consts.INFOBLOX_PARAM_FQDN]
             ))
 
-        rp_zone_details = rp_zone_details[consts.INFOBLOX_RESPONSE_DATA][0]
+        rp_zone_details = rp_zone_details[0]
 
         # Checking if Policy Rule of provided rp_zone is 'GIVEN'
         if rp_zone_details[consts.INFOBLOX_RPZ_POLICY] != consts.INFOBLOX_BLOCK_POLICY_RULE:
-            self.debug_print(consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERROR.format(rule_name=rp_zone_details[
+            self.debug_print(consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERR.format(rule_name=rp_zone_details[
                 consts.INFOBLOX_RPZ_POLICY
             ]))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERROR.format(
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERR.format(
                 rule_name=rp_zone_details[consts.INFOBLOX_RPZ_POLICY]
             ))
 
@@ -269,9 +302,10 @@ class InfobloxddiConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERR_API_UNSUPPORTED_METHOD.format(
                 method=method)), response_data
         except Exception as e:
-            self.debug_print(consts.INFOBLOX_EXCEPTION_OCCURRED, e)
+            error_msg = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".format(consts.INFOBLOX_EXCEPTION_OCCURRED, error_msg))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_EXCEPTION_OCCURRED, e), response_data
+            return action_result.set_status(phantom.APP_ERROR, "{}. {}".format(consts.INFOBLOX_EXCEPTION_OCCURRED, error_msg)), response_data
 
         # Make the call
         try:
@@ -286,7 +320,7 @@ class InfobloxddiConnector(BaseConnector):
 
             # store the r_text in debug data, it will get dumped in the logs if an error occurs
             if hasattr(action_result, 'add_debug_data'):
-                if (request_obj is not None):
+                if request_obj is not None:
                     action_result.add_debug_data({'r_status_code': request_obj.status_code})
                     action_result.add_debug_data({'r_text': request_obj.text})
                     action_result.add_debug_data({'r_headers': request_obj.headers})
@@ -294,10 +328,11 @@ class InfobloxddiConnector(BaseConnector):
                     action_result.add_debug_data({'r_text': 'r is None'})
 
         except Exception as e:
-            self.debug_print(consts.INFOBLOX_ERR_SERVER_CONNECTION, e)
+            error_msg = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".format(consts.INFOBLOX_ERR_SERVER_CONNECTION, error_msg))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERR_SERVER_CONNECTION,
-                                            e), response_data
+            return action_result.set_status(phantom.APP_ERROR,
+                                            "{}. {}".format(consts.INFOBLOX_ERR_SERVER_CONNECTION, error_msg)), response_data
 
         # Handling the 404 status code for list_rpz action
         if self.get_action_identifier() == "list_rpz" and \
@@ -305,6 +340,10 @@ class InfobloxddiConnector(BaseConnector):
             response_data = {
                 consts.INFOBLOX_RESOURCE_NOT_FOUND: True
             }
+            try:
+                response_data["error_message"] = json.loads(request_obj.text).get("text")
+            except:
+                pass
             return phantom.APP_SUCCESS, response_data
 
         if request_obj.status_code in ERROR_RESPONSE_DICT:
@@ -319,8 +358,10 @@ class InfobloxddiConnector(BaseConnector):
             self.debug_print(consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=message))
 
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERR_FROM_SERVER,
-                                            status=request_obj.status_code, detail=message), response_data
+            return action_result.set_status(
+                phantom.APP_ERROR,
+                consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=message)
+            ), response_data
 
         try:
             content_type = request_obj.headers[consts.INFOBLOX_JSON_CONTENT_TYPE]
@@ -330,9 +371,10 @@ class InfobloxddiConnector(BaseConnector):
         except Exception as e:
             # request_obj.text is guaranteed to be NON None, it will be empty, but not None
             message = consts.INFOBLOX_ERR_JSON_PARSE.format(raw_text=request_obj.text)
-            self.debug_print(message, e)
+            error_msg = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".formate(message, error_msg))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, message, e), response_data
+            return action_result.set_status(phantom.APP_ERROR, "{}. {}".formate(message, error_msg)), response_data
 
         if request_obj.status_code in SUCCESS_RESPONSE_CODES:
             response_data = {
@@ -344,12 +386,13 @@ class InfobloxddiConnector(BaseConnector):
 
         # If response code is unknown
         self.debug_print(consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code,
-                                                                detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG))
+                                                                detail=consts.INFOBLOX_REST_RESP_OTHER_ERR_MSG))
         # All other response codes from REST call
         # Set the action_result status to error, the handler function will most probably return as is
-        return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERR_FROM_SERVER,
-                                        status=request_obj.status_code,
-                                        detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG), response_data
+        return action_result.set_status(
+            phantom.APP_ERROR,
+            consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERR_MSG)
+        ), response_data
 
     def _make_paged_rest_call(self, endpoint, action_result, params={}, **rest_call_options):
         """ Function used to make rest call requests in a paged fashion.
@@ -375,6 +418,9 @@ class InfobloxddiConnector(BaseConnector):
 
         if phantom.is_fail(status):
             return action_result.get_status(), None
+
+        if response.get(consts.INFOBLOX_RESOURCE_NOT_FOUND):
+            return phantom.APP_SUCCESS, response
 
         response = response.get(consts.INFOBLOX_RESPONSE_DATA, {})
 
@@ -426,7 +472,7 @@ class InfobloxddiConnector(BaseConnector):
         :return: status (success/failure)
         """
 
-        action_result = ActionResult()
+        action_result = self.add_action_result(ActionResult(dict(param)))
         self.save_progress(consts.INFOBLOX_TEST_CONNECTIVITY_MSG)
         self.save_progress("Configured URL: {url}".format(url=self._url))
 
@@ -437,11 +483,10 @@ class InfobloxddiConnector(BaseConnector):
 
         if phantom.is_fail(status):
             self.save_progress(action_result.get_message())
-            self.set_status(phantom.APP_ERROR, consts.INFOBLOX_TEST_CONN_FAIL)
-            return action_result.get_status()
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_TEST_CONN_FAIL)
 
-        self.set_status_save_progress(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCC)
-        return action_result.get_status()
+        self.save_progress(consts.INFOBLOX_TEST_CONN_SUCC)
+        return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCC)
 
     def _get_network_info(self, param):
         """ To get details about DHCP network(s)
@@ -485,7 +530,7 @@ class InfobloxddiConnector(BaseConnector):
                 # Return all results
                 action_result.add_data(network_info)
 
-        action_result.update_summary({'number of matching networks': action_result.get_data_size()})
+        action_result.update_summary({'number_of_matching_networks': action_result.get_data_size()})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -565,10 +610,10 @@ class InfobloxddiConnector(BaseConnector):
             # Invoking record:a and record:aaaa for hostname
             else:
                 record_a_params = {
-                        consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_A_RETURN_FIELDS,
-                        "{}{}".format(consts.INFOBLOX_JSON_RECORD_NAME, "~"): ip_hostname,
-                        consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
-                    }
+                    consts.INFOBLOX_JSON_RETURN_FIELDS: consts.INFOBLOX_RECORD_A_RETURN_FIELDS,
+                    "{}{}".format(consts.INFOBLOX_JSON_RECORD_NAME, "~"): ip_hostname,
+                    consts.INFOBLOX_PARAM_VIEW: consts.INFOBLOX_NETWORK_VIEW_DEFAULT
+                }
 
                 # Make call to get lease information
                 host_status, host_response = self._make_rest_call(consts.INFOBLOX_RECORDS_IPv4_ENDPOINT,
@@ -620,9 +665,9 @@ class InfobloxddiConnector(BaseConnector):
                 data[consts.INFOBLOX_JSON_OS] = host_data.get('discovered_data', {}).get('os')
                 data[consts.INFOBLOX_JSON_ADDRESS] = host_data.get(consts.INFOBLOX_JSON_A_IP,
                                                                    host_data.get(consts.INFOBLOX_JSON_AAAA_IP))
-                if(phantom.is_ip(host_data.get(consts.INFOBLOX_JSON_A_IP))):
+                if phantom.is_ip(host_data.get(consts.INFOBLOX_JSON_A_IP)):
                     data[consts.INFOBLOX_JSON_PROTOCOL] = "IPV4"
-                elif(phantom.is_ip(host_data.get(consts.INFOBLOX_JSON_AAAA_IP))):
+                elif phantom.is_ip(host_data.get(consts.INFOBLOX_JSON_AAAA_IP)):
                     data[consts.INFOBLOX_JSON_PROTOCOL] = "IPV6"
 
                 summary_data["mac_address"] = data[consts.INFOBLOX_JSON_HARDWARE]
@@ -666,24 +711,26 @@ class InfobloxddiConnector(BaseConnector):
         summary_data = action_result.update_summary({})
 
         # Make call to obtain list of network view
-        status, response = self._make_rest_call(consts.INFOBLOX_NETWORK_VIEW, action_result, method="get")
+        status, response = self._make_paged_rest_call(
+            consts.INFOBLOX_NETWORK_VIEW,
+            action_result,
+            method="get"
+        )
 
         # Something went wrong
         if phantom.is_fail(status):
             return action_result.get_status()
 
-        response_list = response[consts.INFOBLOX_RESPONSE_DATA]
-
         # If network view information is unavailable
-        if not response_list:
+        if not response:
             self.debug_print(consts.INFOBLOX_NETWORK_VIEW_INFO_UNAVAILABLE)
             return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_NETWORK_VIEW_INFO_UNAVAILABLE)
 
-        for data in response_list:
+        for data in response:
             action_result.add_data(data)
 
         # Update summary data
-        summary_data["total_network_view"] = len(response_list)
+        summary_data["total_network_view"] = len(response)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -705,7 +752,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain = self._handle_py_ver_compat_for_domain(domain_name)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(e))
+            error_msg = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_msg))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -715,7 +763,7 @@ class InfobloxddiConnector(BaseConnector):
 
         rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain, rp_zone=rp_zone)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -729,7 +777,11 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj.headers.update({"ibapauth": self._sess_obj.cookies["ibapauth"]})
 
         # Checking if RPZ rule name exists in given rp_zone
-        check_rpz_rule_params = {consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name, consts.INFOBLOX_PARAM_ZONE: rp_zone}
+        check_rpz_rule_params = {
+            consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name,
+            consts.INFOBLOX_PARAM_ZONE: rp_zone,
+            consts.INFOBLOX_PARAM_VIEW: view
+        }
         check_name_details_status, rpz_rule_name_details = self._make_rest_call(consts.INFOBLOX_DOMAIN_ENDPOINT,
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
@@ -787,9 +839,9 @@ class InfobloxddiConnector(BaseConnector):
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
         comment = param.get(consts.INFOBLOX_JSON_COMMENT)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
 
-        rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address, rpz=rp_zone)
+        rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address.lower(), rpz=rp_zone)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -803,7 +855,11 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj.headers.update({"ibapauth": self._sess_obj.cookies["ibapauth"]})
 
         # Checking if RPZ rule name exists in given rp_zone
-        check_rpz_rule_params = {consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name, consts.INFOBLOX_PARAM_ZONE: rp_zone}
+        check_rpz_rule_params = {
+            consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name,
+            consts.INFOBLOX_PARAM_ZONE: rp_zone,
+            consts.INFOBLOX_PARAM_VIEW: view
+        }
         check_name_details_status, rpz_rule_name_details = self._make_rest_call(consts.INFOBLOX_IP_ENDPOINT,
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
@@ -860,9 +916,9 @@ class InfobloxddiConnector(BaseConnector):
         # Optional parameter
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
 
-        rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address, rpz=rp_zone)
+        rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address.lower(), rpz=rp_zone)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -876,7 +932,11 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj.headers.update({"ibapauth": self._sess_obj.cookies["ibapauth"]})
 
         # Checking if RPZ rule name exists in given rp_zone
-        check_rpz_rule_params = {consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name, consts.INFOBLOX_PARAM_ZONE: rp_zone}
+        check_rpz_rule_params = {
+            consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name,
+            consts.INFOBLOX_PARAM_ZONE: rp_zone,
+            consts.INFOBLOX_PARAM_VIEW: view
+        }
         check_name_details_status, rpz_rule_name_details = self._make_rest_call(consts.INFOBLOX_IP_ENDPOINT,
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
@@ -928,7 +988,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain = self._handle_py_ver_compat_for_domain(domain_name)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, " Please provide a valid 'domain' parameter. {0}".format(e))
+            error_msg = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_msg))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -949,7 +1010,11 @@ class InfobloxddiConnector(BaseConnector):
         self._sess_obj.headers.update({"ibapauth": self._sess_obj.cookies["ibapauth"]})
 
         # Checking if RPZ rule name exists in given rp_zone
-        check_rpz_rule_params = {consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name, consts.INFOBLOX_PARAM_ZONE: rp_zone}
+        check_rpz_rule_params = {
+            consts.INFOBLOX_RPZ_RULE_NAME: rpz_rule_name,
+            consts.INFOBLOX_PARAM_ZONE: rp_zone,
+            consts.INFOBLOX_PARAM_VIEW: view
+        }
         check_name_details_status, rpz_rule_name_details = self._make_rest_call(consts.INFOBLOX_DOMAIN_ENDPOINT,
                                                                                 action_result,
                                                                                 params=check_rpz_rule_params,
@@ -1003,12 +1068,12 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_fail(rp_zone_details_status):
             return action_result.get_status()
 
-        if rp_zone_details.get(consts.INFOBLOX_RESOURCE_NOT_FOUND):
-            return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_LIST_RPZ_NON_DEF_MSG)
+        if isinstance(rp_zone_details, dict) and rp_zone_details.get(consts.INFOBLOX_RESOURCE_NOT_FOUND):
+            return action_result.set_status(phantom.APP_ERROR, rp_zone_details.get("error_message", consts.INFOBLOX_LIST_RPZ_NON_DEF_MSG))
 
-        summary_data[consts.INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES] = len(rp_zone_details[consts.INFOBLOX_RESPONSE_DATA])
+        summary_data[consts.INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES] = len(rp_zone_details)
 
-        for rp_zone_detail in rp_zone_details[consts.INFOBLOX_RESPONSE_DATA]:
+        for rp_zone_detail in rp_zone_details:
             if rp_zone_detail.get(consts.INFOBLOX_LAST_UPDATED_TIME):
                 # Converting epoch seconds to "%Y-%m-%d %H:%M:%S" date format
                 rp_zone_detail[consts.INFOBLOX_LAST_UPDATED_TIME] = time.strftime(
@@ -1040,7 +1105,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting ipv4 host details
         if phantom.is_fail(ipv4_hosts_status):
-            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
@@ -1064,7 +1129,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting ipv6 host details
         if phantom.is_fail(ipv6_hosts_status):
-            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
@@ -1119,6 +1184,7 @@ class InfobloxddiConnector(BaseConnector):
         :return: status (success/failure)
         """
 
+        self.save_state(self._state)
         return self._logout()
 
 
