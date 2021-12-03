@@ -13,6 +13,7 @@
     "product_name": "Infoblox DDI",
     "product_version_regex": ".*",
     "min_phantom_version": "4.9.39220",
+    "fips_compliant": true,
     "logo": "logo_infoblox.svg",
     "logo_dark": "logo_infoblox_dark.svg",
     "latest_tested_versions": [
