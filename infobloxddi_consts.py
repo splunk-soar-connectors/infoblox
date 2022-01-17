@@ -16,7 +16,7 @@
 #
 # Json keys specific to the app's config parameters
 INFOBLOX_CONFIG_USERNAME = "username"
-INFOBLOX_CONFIG_PASSWORD = "password"
+INFOBLOX_CONFIG_PASSWORD = "password"  # pragma: allowlist secret
 INFOBLOX_CONFIG_URL = "url"
 INFOBLOX_CONFIG_VERIFY_SERVER_CERT = "verify_server_cert"
 
@@ -98,8 +98,11 @@ INFOBLOX_RECORD_AAAA_RETURN_FIELDS = "ipv6addr,name,view,zone,discovered_data"
 
 # Status messages for the application
 INFOBLOX_ERR_CODE_UNAVAILABLE = "Error code unavailable"
-INFOBLOX_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or the action parameters."
-INFOBLOX_EXCEPTION_TYPE_ERR = "Error occurred while connecting to the Infoblox server. Please check the asset configuration and|or the action parameters."
+INFOBLOX_ERR_MSG_UNAVAILABLE = (
+    "Error message unavailable. Please check the asset configuration and|or the action parameters.")
+INFOBLOX_EXCEPTION_TYPE_ERR = (
+    "Error occurred while connecting to the Infoblox server. "
+    "Please check the asset configuration and|or the action parameters.")
 INFOBLOX_ERR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
