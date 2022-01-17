@@ -15,18 +15,18 @@
 #
 #
 # Standard library imports
-import json
-import time
-import socket
-import requests
 import ipaddress
+import json
+import socket
 import sys
+import time
 
 # Phantom imports
 import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
+import requests
 from bs4 import UnicodeDammit
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
 
 # Local imports
 import infobloxddi_consts as consts
@@ -521,7 +521,8 @@ class InfobloxddiConnector(BaseConnector):
                 params[consts.INFOBLOX_JSON_NETWORK] = ip
 
             else:  # Set search IP to use after the REST call if the IP is just an IP
-                search_ip = self._handle_py_ver_compat_for_input_str(ip)  # search_ip needs to be unicode in order to be used by ipaddress library
+                # search_ip needs to be unicode in order to be used by ipaddress library
+                search_ip = self._handle_py_ver_compat_for_input_str(ip)
 
         if network_view:
             params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
