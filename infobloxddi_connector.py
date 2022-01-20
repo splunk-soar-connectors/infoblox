@@ -404,7 +404,7 @@ class InfobloxddiConnector(BaseConnector):
             consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERR_MSG)
         ), response_data
 
-    def _make_paged_rest_call(self, endpoint, action_result, params, **rest_call_options):
+    def _make_paged_rest_call(self, endpoint, action_result, params=None, **rest_call_options):
         """ Function used to make rest call requests in a paged fashion.
         This will alleviate errors with getting >1000 results from Infoblox.
 
