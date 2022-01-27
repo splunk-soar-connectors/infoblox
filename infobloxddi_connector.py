@@ -1,6 +1,6 @@
 # File: infobloxddi_connector.py
 #
-# Copyright (c) 2017-2021 Splunk Inc.
+# Copyright (c) 2017-2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -404,7 +404,7 @@ class InfobloxddiConnector(BaseConnector):
             consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERR_MSG)
         ), response_data
 
-    def _make_paged_rest_call(self, endpoint, action_result, params={}, **rest_call_options):
+    def _make_paged_rest_call(self, endpoint, action_result, params=None, **rest_call_options):
         """ Function used to make rest call requests in a paged fashion.
         This will alleviate errors with getting >1000 results from Infoblox.
 
@@ -417,6 +417,9 @@ class InfobloxddiConnector(BaseConnector):
         :param rest_call_options: additional options for _make_rest_call
         :return: status (success/failure) (along with appropriate message), response obtained by making an API call
         """
+        if params is None:
+            params = {}
+
         page_count = 1
         self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
 
@@ -521,12 +524,14 @@ class InfobloxddiConnector(BaseConnector):
                 params[consts.INFOBLOX_JSON_NETWORK] = ip
 
             else:  # Set search IP to use after the REST call if the IP is just an IP
-                search_ip = self._handle_py_ver_compat_for_input_str(ip)  # search_ip needs to be unicode in order to be used by ipaddress library
+                # search_ip needs to be unicode in order to be used by ipaddress library
+                search_ip = self._handle_py_ver_compat_for_input_str(ip)
 
         if network_view:
             params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
 
-        status, response = self._make_paged_rest_call(consts.INFOBLOX_NETWORK_ENDPOINT, action_result, params, method='get')
+        status, response = self._make_paged_rest_call(consts.INFOBLOX_NETWORK_ENDPOINT, action_result,
+                                                      params, method='get')
 
         if phantom.is_fail(status):
             return action_result.get_status()
@@ -1205,7 +1210,7 @@ if __name__ == "__main__":
     pudb.set_trace()
     if len(sys.argv) < 2:
         print("No test json specified as input")
-        exit(0)
+        sys.exit(0)
     with open(sys.argv[1]) as f:
         in_json = f.read()
         in_json = json.loads(in_json)
@@ -1214,4 +1219,4 @@ if __name__ == "__main__":
         connector.print_progress_message = True
         return_value = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(return_value), indent=4))
-    exit(0)
+    sys.exit(0)

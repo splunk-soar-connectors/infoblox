@@ -1,6 +1,6 @@
 # File: infobloxddi_consts.py
 #
-# Copyright (c) 2017-2021 Splunk Inc.
+# Copyright (c) 2017-2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -99,7 +99,8 @@ INFOBLOX_RECORD_AAAA_RETURN_FIELDS = "ipv6addr,name,view,zone,discovered_data"
 # Status messages for the application
 INFOBLOX_ERR_CODE_UNAVAILABLE = "Error code unavailable"
 INFOBLOX_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or the action parameters."
-INFOBLOX_EXCEPTION_TYPE_ERR = "Error occurred while connecting to the Infoblox server. Please check the asset configuration and|or the action parameters."
+INFOBLOX_EXCEPTION_TYPE_ERR = "Error occurred while connecting to the Infoblox server. Please check the asset configuration " \
+                              "and|or the action parameters."
 INFOBLOX_ERR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
