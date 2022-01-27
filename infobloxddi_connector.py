@@ -15,18 +15,18 @@
 #
 #
 # Standard library imports
-import json
-import time
-import socket
-import requests
 import ipaddress
+import json
+import socket
 import sys
+import time
 
 # Phantom imports
 import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
+import requests
 from bs4 import UnicodeDammit
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
 
 # Local imports
 import infobloxddi_consts as consts
