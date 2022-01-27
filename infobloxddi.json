@@ -1003,21 +1003,12 @@
                     "example_values": [
                         "record:rpz:cname/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:www.test.abc.test_zone/default"
                     ]
-<<<<<<< HEAD
                 },
                 {
                     "data_path": "action_result.summary",
                     "data_type": "string"
                 },
                 {
-=======
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
-                },
-                {
->>>>>>> main
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Unblock Status",
