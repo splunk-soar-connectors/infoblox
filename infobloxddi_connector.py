@@ -15,18 +15,20 @@
 #
 #
 # Standard library imports
-import json
-import time
-import socket
-import requests
 import ipaddress
+import json
+import socket
 import sys
+import time
 
 # Phantom imports
 import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
+import requests
 from bs4 import UnicodeDammit
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.ssl_ import create_urllib3_context
 
 # Local imports
 import infobloxddi_consts as consts
@@ -44,6 +46,27 @@ ERROR_RESPONSE_DICT = {
 # List containing HTTP codes to be considered as success
 SUCCESS_RESPONSE_CODES = [consts.INFOBLOX_REST_RESP_SUCCESS, consts.INFOBLOX_REST_RESP_CREATE_SUCCESS]
 
+# We can pick FIPS cipers for TLS to work.
+# We need to prevent the clients to ask to speak SHA1
+CIPHERS = (
+    'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:'
+    'DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES:!aNULL:'
+    '!eNULL:!MD5'
+)
+
+class DESAdapter(HTTPAdapter):
+    """
+    A TransportAdapter that re-enables 3DES support in Requests.
+    """
+    def init_poolmanager(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers=CIPHERS)
+        kwargs['ssl_context'] = context
+        return super(DESAdapter, self).init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers=CIPHERS)
+        kwargs['ssl_context'] = context
+        return super(DESAdapter, self).proxy_manager_for(*args, **kwargs)
 
 def _break_ip_address(cidr_ip_address):
     """ Function divides the input parameter into IP address and network mask.
@@ -123,6 +146,8 @@ class InfobloxddiConnector(BaseConnector):
 
         # Initializing session object which would be used for subsequent API calls
         self._sess_obj = requests.session()
+        self.save_progress('paul: url: %s' % self._url)
+        self._sess_obj.mount(self._url, DESAdapter())
 
         return phantom.APP_SUCCESS
 
