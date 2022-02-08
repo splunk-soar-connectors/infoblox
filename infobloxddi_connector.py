@@ -15,18 +15,20 @@
 #
 #
 # Standard library imports
-import json
-import time
-import socket
-import requests
 import ipaddress
+import json
+import socket
 import sys
+import time
 
 # Phantom imports
 import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
+import requests
 from bs4 import UnicodeDammit
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.ssl_ import create_urllib3_context
 
 # Local imports
 import infobloxddi_consts as consts
@@ -44,6 +46,37 @@ ERROR_RESPONSE_DICT = {
 # List containing HTTP codes to be considered as success
 SUCCESS_RESPONSE_CODES = [consts.INFOBLOX_REST_RESP_SUCCESS, consts.INFOBLOX_REST_RESP_CREATE_SUCCESS]
 
+# We can pick FIPS cipers for TLS to work.
+# We need to prevent the clients to ask to speak SHA1
+CIPHERS = (
+    'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:'
+    'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:'
+    'DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:'
+    'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:'
+    'DHE-DSS-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:'
+    'ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:'
+    'DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:'
+    'DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:RSA-PSK-AES256-GCM-SHA384:'
+    'DHE-PSK-AES256-GCM-SHA384:AES256-GCM-SHA384:PSK-AES256-GCM-SHA384:'
+    'RSA-PSK-AES128-GCM-SHA256:DHE-PSK-AES128-GCM-SHA256:AES128-GCM-SHA256:'
+    'PSK-AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:ECDHE-PSK-AES256-CBC-SHA384:RSA-PSK-AES256-CBC-SHA384:'
+    'DHE-PSK-AES256-CBC-SHA384:PSK-AES256-CBC-SHA384:ECDHE-PSK-AES128-CBC-SHA256:RSA-PSK-AES128-CBC-SHA256:'
+    'DHE-PSK-AES128-CBC-SHA256:PSK-AES128-CBC-SHA256'
+)
+
+class DESAdapter(HTTPAdapter):
+    """
+    A TransportAdapter that re-enables 3DES support in Requests.
+    """
+    def init_poolmanager(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers=CIPHERS)
+        kwargs['ssl_context'] = context
+        return super(DESAdapter, self).init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers=CIPHERS)
+        kwargs['ssl_context'] = context
+        return super(DESAdapter, self).proxy_manager_for(*args, **kwargs)
 
 def _break_ip_address(cidr_ip_address):
     """ Function divides the input parameter into IP address and network mask.
@@ -123,6 +156,8 @@ class InfobloxddiConnector(BaseConnector):
 
         # Initializing session object which would be used for subsequent API calls
         self._sess_obj = requests.session()
+        self.save_progress('paul: url: %s' % self._url)
+        self._sess_obj.mount(self._url, DESAdapter())
 
         return phantom.APP_SUCCESS
 
