@@ -2,11 +2,11 @@
 # Infoblox DDI
 
 Publisher: Splunk  
-Connector Version: 2\.1\.3  
+Connector Version: 2\.1\.4  
 Product Vendor: Infoblox  
 Product Name: Infoblox DDI  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 4\.9\.39220  
+Minimum Product Version: 5\.1\.0  
 
 This app supports various containment and investigative actions on Infoblox Grid Manager
 
