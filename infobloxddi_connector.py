@@ -1,6 +1,6 @@
 # File: infobloxddi_connector.py
 #
-# Copyright (c) 2017-2022 Splunk Inc.
+# Copyright (c) 2017-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -132,8 +132,8 @@ class InfobloxddiConnector(BaseConnector):
         :return: error message
         """
 
-        error_code = consts.INFOBLOX_ERR_CODE_UNAVAILABLE
-        error_msg = consts.INFOBLOX_ERR_MSG_UNAVAILABLE
+        error_code = consts.INFOBLOX_ERROR_CODE_UNAVAILABLE
+        error_msg = consts.INFOBLOX_ERROR_MSG_UNAVAILABLE
 
         try:
             if e.args:
@@ -240,7 +240,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting rp_zone details
         if phantom.is_fail(rp_zone_details_status):
-            self.debug_print(consts.INFOBLOX_LIST_RP_ZONE_ERR)
+            self.debug_print(consts.INFOBLOX_LIST_RP_ZONE_ERROR)
             return action_result.get_status(), None
 
         return phantom.APP_SUCCESS, rpz_zone_details
@@ -275,11 +275,11 @@ class InfobloxddiConnector(BaseConnector):
 
         # Checking if Policy Rule of provided rp_zone is 'GIVEN'
         if rp_zone_details[consts.INFOBLOX_RPZ_POLICY] != consts.INFOBLOX_BLOCK_POLICY_RULE:
-            self.debug_print(consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERR.format(rule_name=rp_zone_details[
+            self.debug_print(consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERROR.format(rule_name=rp_zone_details[
                 consts.INFOBLOX_RPZ_POLICY
             ]))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERR.format(
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERROR.format(
                 rule_name=rp_zone_details[consts.INFOBLOX_RPZ_POLICY]
             ))
 
@@ -307,9 +307,9 @@ class InfobloxddiConnector(BaseConnector):
         try:
             request_func = getattr(self._sess_obj, method)
         except AttributeError:
-            self.debug_print(consts.INFOBLOX_ERR_API_UNSUPPORTED_METHOD.format(method=method))
+            self.debug_print(consts.INFOBLOX_ERROR_API_UNSUPPORTED_METHOD.format(method=method))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERR_API_UNSUPPORTED_METHOD.format(
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERROR_API_UNSUPPORTED_METHOD.format(
                 method=method)), response_data
         except Exception as e:
             error_msg = self._get_error_message_from_exception(e)
@@ -339,10 +339,10 @@ class InfobloxddiConnector(BaseConnector):
 
         except Exception as e:
             error_msg = self._get_error_message_from_exception(e)
-            self.debug_print("{}. {}".format(consts.INFOBLOX_ERR_SERVER_CONNECTION, error_msg))
+            self.debug_print("{}. {}".format(consts.INFOBLOX_ERROR_SERVER_CONNECTION, error_msg))
             # Set the action_result status to error, the handler function will most probably return as is
             return action_result.set_status(phantom.APP_ERROR,
-                                            "{}. {}".format(consts.INFOBLOX_ERR_SERVER_CONNECTION, error_msg)), response_data
+                                            "{}. {}".format(consts.INFOBLOX_ERROR_SERVER_CONNECTION, error_msg)), response_data
 
         # Handling the 404 status code for list_rpz action
         if self.get_action_identifier() == "list_rpz" and \
@@ -365,12 +365,12 @@ class InfobloxddiConnector(BaseConnector):
             except:
                 pass
 
-            self.debug_print(consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=message))
+            self.debug_print(consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code, detail=message))
 
             # Set the action_result status to error, the handler function will most probably return as is
             return action_result.set_status(
                 phantom.APP_ERROR,
-                consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=message)
+                consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code, detail=message)
             ), response_data
 
         try:
@@ -380,7 +380,7 @@ class InfobloxddiConnector(BaseConnector):
 
         except Exception as e:
             # request_obj.text is guaranteed to be NON None, it will be empty, but not None
-            message = consts.INFOBLOX_ERR_JSON_PARSE.format(raw_text=request_obj.text)
+            message = consts.INFOBLOX_ERROR_JSON_PARSE.format(raw_text=request_obj.text)
             error_msg = self._get_error_message_from_exception(e)
             self.debug_print("{}. {}".formate(message, error_msg))
             # Set the action_result status to error, the handler function will most probably return as is
@@ -395,13 +395,13 @@ class InfobloxddiConnector(BaseConnector):
             return phantom.APP_SUCCESS, response_data
 
         # If response code is unknown
-        self.debug_print(consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code,
-                                                                detail=consts.INFOBLOX_REST_RESP_OTHER_ERR_MSG))
+        self.debug_print(consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code,
+                                                                detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG))
         # All other response codes from REST call
         # Set the action_result status to error, the handler function will most probably return as is
         return action_result.set_status(
             phantom.APP_ERROR,
-            consts.INFOBLOX_ERR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERR_MSG)
+            consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG)
         ), response_data
 
     def _make_paged_rest_call(self, endpoint, action_result, params=None, **rest_call_options):
@@ -1118,7 +1118,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting ipv4 host details
         if phantom.is_fail(ipv4_hosts_status):
-            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERR)
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
@@ -1142,7 +1142,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting ipv6 host details
         if phantom.is_fail(ipv6_hosts_status):
-            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERR)
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
