@@ -33,12 +33,12 @@ import infobloxddi_consts as consts
 
 # Dictionary that maps each error code with its corresponding message
 ERROR_RESPONSE_DICT = {
-    consts.INFOBLOX_REST_RESP_BAD_REQUEST: consts.INFOBLOX_REST_RESP_BAD_REQUEST_MSG,
-    consts.INFOBLOX_REST_RESP_UNAUTHORIZED: consts.INFOBLOX_REST_RESP_UNAUTHORIZED_MSG,
-    consts.INFOBLOX_REST_RESP_FORBIDDEN: consts.INFOBLOX_REST_RESP_FORBIDDEN_MSG,
-    consts.INFOBLOX_REST_RESP_NOT_FOUND: consts.INFOBLOX_REST_RESP_NOT_FOUND_MSG,
-    consts.INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED: consts.INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED_MSG,
-    consts.INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR: consts.INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MSG
+    consts.INFOBLOX_REST_RESP_BAD_REQUEST: consts.INFOBLOX_REST_RESP_BAD_REQUEST_MESSAGE,
+    consts.INFOBLOX_REST_RESP_UNAUTHORIZED: consts.INFOBLOX_REST_RESP_UNAUTHORIZED_MESSAGE,
+    consts.INFOBLOX_REST_RESP_FORBIDDEN: consts.INFOBLOX_REST_RESP_FORBIDDEN_MESSAGE,
+    consts.INFOBLOX_REST_RESP_NOT_FOUND: consts.INFOBLOX_REST_RESP_NOT_FOUND_MESSAGE,
+    consts.INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED: consts.INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED_MESSAGE,
+    consts.INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR: consts.INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MESSAGE
 }
 
 # List containing HTTP codes to be considered as success
@@ -133,26 +133,26 @@ class InfobloxddiConnector(BaseConnector):
         """
 
         error_code = consts.INFOBLOX_ERROR_CODE_UNAVAILABLE
-        error_msg = consts.INFOBLOX_ERROR_MSG_UNAVAILABLE
+        error_message = consts.INFOBLOX_ERROR_MESSAGE_UNAVAILABLE
 
         try:
             if e.args:
                 if len(e.args) > 1:
                     error_code = e.args[0]
-                    error_msg = e.args[1]
+                    error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_msg = e.args[0]
+                    error_message = e.args[0]
         except:
             pass
 
         try:
-            error_msg = self._handle_py_ver_compat_for_input_str(error_msg)
+            error_message = self._handle_py_ver_compat_for_input_str(error_message)
         except TypeError:
-            error_msg = consts.INFOBLOX_EXCEPTION_TYPE_ERR
+            error_message = consts.INFOBLOX_EXCEPTION_TYPE_ERROR
         except:
             pass
 
-        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+        return "Error Code: {0}. Error Message: {1}".format(error_code, error_message)
 
     def _handle_py_ver_compat_for_domain(self, input_str):
         """
@@ -199,8 +199,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             ip_address, net_mask = _break_ip_address(cidr_ip_address)
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print("{}. {}".format(consts.INFOBLOX_IP_VALIDATION_FAILED, error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".format(consts.INFOBLOX_IP_VALIDATION_FAILED, error_message))
             return False
 
         # Validate IP address
@@ -312,10 +312,10 @@ class InfobloxddiConnector(BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_ERROR_API_UNSUPPORTED_METHOD.format(
                 method=method)), response_data
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print("{}. {}".format(consts.INFOBLOX_EXCEPTION_OCCURRED, error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".format(consts.INFOBLOX_EXCEPTION_OCCURRED, error_message))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, "{}. {}".format(consts.INFOBLOX_EXCEPTION_OCCURRED, error_msg)), response_data
+            return action_result.set_status(phantom.APP_ERROR, "{}. {}".format(consts.INFOBLOX_EXCEPTION_OCCURRED, error_message)), response_data
 
         # Make the call
         try:
@@ -338,11 +338,11 @@ class InfobloxddiConnector(BaseConnector):
                     action_result.add_debug_data({'r_text': 'r is None'})
 
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print("{}. {}".format(consts.INFOBLOX_ERROR_SERVER_CONNECTION, error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".format(consts.INFOBLOX_ERROR_SERVER_CONNECTION, error_message))
             # Set the action_result status to error, the handler function will most probably return as is
             return action_result.set_status(phantom.APP_ERROR,
-                                            "{}. {}".format(consts.INFOBLOX_ERROR_SERVER_CONNECTION, error_msg)), response_data
+                                            "{}. {}".format(consts.INFOBLOX_ERROR_SERVER_CONNECTION, error_message)), response_data
 
         # Handling the 404 status code for list_rpz action
         if self.get_action_identifier() == "list_rpz" and \
@@ -381,10 +381,10 @@ class InfobloxddiConnector(BaseConnector):
         except Exception as e:
             # request_obj.text is guaranteed to be NON None, it will be empty, but not None
             message = consts.INFOBLOX_ERROR_JSON_PARSE.format(raw_text=request_obj.text)
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print("{}. {}".formate(message, error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print("{}. {}".formate(message, error_message))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, "{}. {}".formate(message, error_msg)), response_data
+            return action_result.set_status(phantom.APP_ERROR, "{}. {}".formate(message, error_message)), response_data
 
         if request_obj.status_code in SUCCESS_RESPONSE_CODES:
             response_data = {
@@ -396,12 +396,12 @@ class InfobloxddiConnector(BaseConnector):
 
         # If response code is unknown
         self.debug_print(consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code,
-                                                                detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG))
+                                                                detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE))
         # All other response codes from REST call
         # Set the action_result status to error, the handler function will most probably return as is
         return action_result.set_status(
             phantom.APP_ERROR,
-            consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MSG)
+            consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code, detail=consts.INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE)
         ), response_data
 
     def _make_paged_rest_call(self, endpoint, action_result, params=None, **rest_call_options):
@@ -485,10 +485,10 @@ class InfobloxddiConnector(BaseConnector):
         """
 
         action_result = self.add_action_result(ActionResult(dict(param)))
-        self.save_progress(consts.INFOBLOX_TEST_CONNECTIVITY_MSG)
+        self.save_progress(consts.INFOBLOX_TEST_CONNECTIVITY_MESSAGE)
         self.save_progress("Configured URL: {url}".format(url=self._url))
 
-        self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MSG.format(endpoint='/?_schema'))
+        self.save_progress(consts.INFOBLOX_TEST_ENDPOINT_MESSAGE.format(endpoint='/?_schema'))
 
         # Querying endpoint to check connection to device
         status, response = self._make_rest_call('/?_schema', action_result, method="get", timeout=30)
@@ -497,8 +497,8 @@ class InfobloxddiConnector(BaseConnector):
             self.save_progress(action_result.get_message())
             return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_TEST_CONN_FAIL)
 
-        self.save_progress(consts.INFOBLOX_TEST_CONN_SUCC)
-        return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCC)
+        self.save_progress(consts.INFOBLOX_TEST_CONN_SUCCESS)
+        return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCCESS)
 
     def _get_network_info(self, param):
         """ To get details about DHCP network(s)
@@ -765,8 +765,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain = self._handle_py_ver_compat_for_domain(domain_name)
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -776,7 +776,7 @@ class InfobloxddiConnector(BaseConnector):
 
         rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain, rp_zone=rp_zone)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -852,7 +852,7 @@ class InfobloxddiConnector(BaseConnector):
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
         comment = param.get(consts.INFOBLOX_JSON_COMMENT)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
 
         rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address.lower(), rpz=rp_zone)
 
@@ -929,7 +929,7 @@ class InfobloxddiConnector(BaseConnector):
         # Optional parameter
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
 
         rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address.lower(), rpz=rp_zone)
 
@@ -1001,8 +1001,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain = self._handle_py_ver_compat_for_domain(domain_name)
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -1082,7 +1082,7 @@ class InfobloxddiConnector(BaseConnector):
             return action_result.get_status()
 
         if isinstance(rp_zone_details, dict) and rp_zone_details.get(consts.INFOBLOX_RESOURCE_NOT_FOUND):
-            return action_result.set_status(phantom.APP_ERROR, rp_zone_details.get("error_message", consts.INFOBLOX_LIST_RPZ_NON_DEF_MSG))
+            return action_result.set_status(phantom.APP_ERROR, rp_zone_details.get("error_message", consts.INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE))
 
         summary_data[consts.INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES] = len(rp_zone_details)
 
