@@ -51,17 +51,17 @@ INFOBLOX_JSON_CONTENT_TYPE = "Content-Type"
 INFOBLOX_REST_RESP_SUCCESS = 200
 INFOBLOX_REST_RESP_CREATE_SUCCESS = 201
 INFOBLOX_REST_RESP_BAD_REQUEST = 400
-INFOBLOX_REST_RESP_BAD_REQUEST_MSG = "Bad Request"
+INFOBLOX_REST_RESP_BAD_REQUEST_MESSAGE = "Bad Request"
 INFOBLOX_REST_RESP_UNAUTHORIZED = 401
-INFOBLOX_REST_RESP_UNAUTHORIZED_MSG = "Unauthorized"
+INFOBLOX_REST_RESP_UNAUTHORIZED_MESSAGE = "Unauthorized"
 INFOBLOX_REST_RESP_FORBIDDEN = 403
-INFOBLOX_REST_RESP_FORBIDDEN_MSG = "Forbidden"
+INFOBLOX_REST_RESP_FORBIDDEN_MESSAGE = "Forbidden"
 INFOBLOX_REST_RESP_NOT_FOUND = 404
-INFOBLOX_REST_RESP_NOT_FOUND_MSG = "Not found"
+INFOBLOX_REST_RESP_NOT_FOUND_MESSAGE = "Not found"
 INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED = 405
-INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED_MSG = "Method not allowed"
+INFOBLOX_REST_RESP_METHOD_NOT_ALLOWED_MESSAGE = "Method not allowed"
 INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR = 500
-INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MSG = "Internal server error"
+INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error"
 
 INFOBLOX_ERROR_API_UNSUPPORTED_METHOD = "Unsupported method {method}"
 INFOBLOX_EXCEPTION_OCCURRED = "Exception occurred"
@@ -98,19 +98,19 @@ INFOBLOX_RECORD_AAAA_RETURN_FIELDS = "ipv6addr,name,view,zone,discovered_data"
 
 # Status messages for the application
 INFOBLOX_ERROR_CODE_UNAVAILABLE = "Error code unavailable"
-INFOBLOX_ERROR_MSG_UNAVAILABLE = (
+INFOBLOX_ERROR_MESSAGE_UNAVAILABLE = (
     "Error message unavailable. Please check the asset configuration and|or the action parameters.")
-INFOBLOX_EXCEPTION_TYPE_ERR = (
+INFOBLOX_EXCEPTION_TYPE_ERROR = (
     "Error occurred while connecting to the Infoblox server. "
     "Please check the asset configuration and|or the action parameters.")
 INFOBLOX_ERROR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERROR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERROR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
-INFOBLOX_REST_RESP_OTHER_ERROR_MSG = "Unknown error occurred"
-INFOBLOX_TEST_CONNECTIVITY_MSG = "Logging into device"
+INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE = "Unknown error occurred"
+INFOBLOX_TEST_CONNECTIVITY_MESSAGE = "Logging into device"
 INFOBLOX_TEST_CONN_FAIL = "Connectivity test failed"
-INFOBLOX_TEST_CONN_SUCC = "Connectivity test succeeded"
-INFOBLOX_TEST_ENDPOINT_MSG = "Querying endpoint '{endpoint}' to validate credentials"
+INFOBLOX_TEST_CONN_SUCCESS = "Connectivity test succeeded"
+INFOBLOX_TEST_ENDPOINT_MESSAGE = "Querying endpoint '{endpoint}' to validate credentials"
 INFOBLOX_RESPONSE_DATA = "response_data"
 INFOBLOX_RESOURCE_NOT_FOUND = "resource_not_found"
 INFOBLOX_NETWORK_VIEW_INFO_UNAVAILABLE = "Network View information unavailable"
@@ -123,7 +123,7 @@ INFOBLOX_LIST_RP_ZONE_ERROR = "Error while getting Response Policy Zone details"
 INFOBLOX_LIST_HOSTS_ERROR = "Error while getting list of hosts"
 INFOBLOX_RP_ZONE_POLICY_RULE_ERROR = "Policy rule of the Response Policy Zone must be 'GIVEN'.\nFound: '{rule_name}'"
 INFOBLOX_RP_ZONE_NOT_EXISTS = "Response Policy Zone with FQDN: '{fqdn_name}' does not exist"
-INFOBLOX_VALIDATE_MSG = "Validating Response Policy Zone name and RPZ rule name"
+INFOBLOX_VALIDATE_MESSAGE = "Validating Response Policy Zone name and RPZ rule name"
 INFOBLOX_DOMAIN_ALREADY_BLOCKED = "Domain already blocked"
 INFOBLOX_IP_ALREADY_BLOCKED = "IP/CIDR already blocked"
 INFOBLOX_BLOCK_DOMAIN_SUCCESS = "Domain blocked successfully"
@@ -144,4 +144,4 @@ INFOBLOX_DOMAIN_UNBLOCK_SUCCESS = "Domain unblocked successfully"
 INFOBLOX_REFERENCE_LINK = "reference_link"
 INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES = "total_response_policy_zones"
 INFOBLOX_TOTAL_HOSTS = "total_hosts"
-INFOBLOX_LIST_RPZ_NON_DEF_MSG = "This action gets the data from default network view only"
+INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE = "This action gets the data from default network view only"
