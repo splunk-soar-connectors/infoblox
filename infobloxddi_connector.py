@@ -495,7 +495,7 @@ class InfobloxddiConnector(BaseConnector):
 
         if phantom.is_fail(status):
             self.save_progress(action_result.get_message())
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_TEST_CONN_FAIL)
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_TEST_CONN_FAILED)
 
         self.save_progress(consts.INFOBLOX_TEST_CONN_SUCCESS)
         return action_result.set_status(phantom.APP_SUCCESS, consts.INFOBLOX_TEST_CONN_SUCCESS)
