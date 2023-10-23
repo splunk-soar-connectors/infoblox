@@ -145,3 +145,5 @@ INFOBLOX_REFERENCE_LINK = "reference_link"
 INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES = "total_response_policy_zones"
 INFOBLOX_TOTAL_HOSTS = "total_hosts"
 INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE = "This action gets the data from default network view only"
+
+DEFAULT_REQUEST_TIMEOUT = 30
