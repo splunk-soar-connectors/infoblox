@@ -24,7 +24,6 @@ import time
 # Phantom imports
 import phantom.app as phantom
 import requests
-from bs4 import UnicodeDammit
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
@@ -92,7 +91,6 @@ class InfobloxddiConnector(BaseConnector):
         self._api_password = None
         self._verify_server_cert = False
         self._sess_obj = None
-        self._python_version = None
         self._state = None
         return
 
@@ -106,11 +104,6 @@ class InfobloxddiConnector(BaseConnector):
 
         config = self.get_config()
         self._state = self.load_state()
-
-        try:
-            self._python_version = int(sys.version_info[0])
-        except:
-            return self.set_status(phantom.APP_ERROR, "Error occurred while getting the Phantom server's Python major version.")
 
         # Initializing parameters required for connection
         self._url = config[consts.INFOBLOX_CONFIG_URL].strip("/")
@@ -126,68 +119,34 @@ class InfobloxddiConnector(BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _get_error_message_from_exception(self, e):
-        """ This method is used to get appropriate error message from the exception.
-        :param e: Exception object
-        :return: error message
-        """
 
-        error_code = consts.INFOBLOX_ERROR_CODE_UNAVAILABLE
+    def _get_error_message_from_exception(self, e):
+        """Get an appropriate error message from the exception.
+
+            :param e: Exception object
+            :return: error message
+            """
+        error_code = None
         error_message = consts.INFOBLOX_ERROR_MESSAGE_UNAVAILABLE
 
+        self.error_print("Error occurred.", e)
         try:
-            if e.args:
-                if len(e.args) > 1:
-                    error_code = e.args[0]
-                    error_message = e.args[1]
-                elif len(e.args) == 1:
-                    error_message = e.args[0]
-        except:
-            pass
+                if hasattr(e, "args"):
+                    if len(e.args) > 1:
+                        error_code = e.args[0]
+                        error_message = e.args[1]
+                    elif len(e.args) == 1:
+                        error_message = e.args[0]
+        except Exception as e:
+            self.error_print(
+                f"Error occurred while fetching exception information. Details: {str(e)}")
 
-        try:
-            error_message = self._handle_py_ver_compat_for_input_str(error_message)
-        except TypeError:
-            error_message = consts.INFOBLOX_EXCEPTION_TYPE_ERROR
-        except:
-            pass
+        if not error_code:
+            error_text = f"Error message: {error_message}"
+        else:
+            error_text = f"Error code: {error_code}. Error message: {error_message}"
 
-        return "Error Code: {0}. Error Message: {1}".format(error_code, error_message)
-
-    def _handle_py_ver_compat_for_domain(self, input_str):
-        """
-        This method returns the encoded|original string based on the Python version.
-
-        :param input_str: Input string to be processed
-        :return: input_str in acceptable form based on python version
-        """
-
-        try:
-            # to handle python2 case
-            if input_str and self._python_version < 3:
-                input_str = input_str.decode('utf-8').encode('idna')
-            # to handle python3 case
-            else:
-                input_str = input_str.encode('idna').decode('utf-8')
-        except:
-            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
-
-        return input_str
-
-    def _handle_py_ver_compat_for_input_str(self, input_str):
-        """
-        This method returns the encoded|original string based on the Python version.
-        :param input_str: Input string to be processed
-        :return: input_str (Processed input string based on following logic 'input_str - Python 3; encoded input_str - Python 2')
-        """
-        try:
-            if input_str and self._python_version < 3:
-                input_str = UnicodeDammit(input_str).unicode_markup
-
-        except:
-            self.debug_print("Error occurred while handling python 2to3 compatibility for the input string")
-
-        return input_str
+        return error_text
 
     def _is_ip(self, cidr_ip_address):
         """ Function that checks given address and return True if address is valid IPv4/IPv6 address.
@@ -352,7 +311,7 @@ class InfobloxddiConnector(BaseConnector):
             }
             try:
                 response_data["error_message"] = json.loads(request_obj.text).get("text")
-            except:
+            except Exception:
                 pass
             return phantom.APP_SUCCESS, response_data
 
@@ -362,7 +321,7 @@ class InfobloxddiConnector(BaseConnector):
             try:
                 if isinstance(request_obj.json(), dict):
                     message = request_obj.json().get("text", message)
-            except:
+            except Exception:
                 pass
 
             self.debug_print(consts.INFOBLOX_ERROR_FROM_SERVER.format(status=request_obj.status_code, detail=message))
@@ -524,7 +483,7 @@ class InfobloxddiConnector(BaseConnector):
 
             else:  # Set search IP to use after the REST call if the IP is just an IP
                 # search_ip needs to be unicode in order to be used by ipaddress library
-                search_ip = self._handle_py_ver_compat_for_input_str(ip)
+                search_ip = ip
 
         if network_view:
             params[consts.INFOBLOX_JSON_NETWORK_VIEW] = network_view
@@ -762,19 +721,13 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
-        try:
-            domain = self._handle_py_ver_compat_for_domain(domain_name)
-        except Exception as e:
-            error_message = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
-
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameters
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
         comment = param.get(consts.INFOBLOX_JSON_COMMENT)
 
-        rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain, rp_zone=rp_zone)
+        rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain_name, rp_zone=rp_zone)
 
         self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
 
@@ -998,18 +951,12 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
-        try:
-            domain = self._handle_py_ver_compat_for_domain(domain_name)
-        except Exception as e:
-            error_message = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
-
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameter
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
-        rpz_rule_name = "{domain}.{rpz}".format(domain=domain, rpz=rp_zone)
+        rpz_rule_name = "{domain}.{rpz}".format(domain=domain_name, rpz=rp_zone)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -1183,7 +1130,7 @@ class InfobloxddiConnector(BaseConnector):
 
         try:
             run_action = action_mapping[action]
-        except:
+        except Exception:
             raise ValueError("action {action} is not supported".format(action=action))
 
         return run_action(param)
