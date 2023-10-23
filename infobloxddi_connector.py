@@ -119,7 +119,6 @@ class InfobloxddiConnector(BaseConnector):
 
         return phantom.APP_SUCCESS
 
-
     def _get_error_message_from_exception(self, e):
         """Get an appropriate error message from the exception.
 
@@ -131,12 +130,12 @@ class InfobloxddiConnector(BaseConnector):
 
         self.error_print("Error occurred.", e)
         try:
-                if hasattr(e, "args"):
-                    if len(e.args) > 1:
-                        error_code = e.args[0]
-                        error_message = e.args[1]
-                    elif len(e.args) == 1:
-                        error_message = e.args[0]
+            if hasattr(e, "args"):
+                if len(e.args) > 1:
+                    error_code = e.args[0]
+                    error_message = e.args[1]
+                elif len(e.args) == 1:
+                    error_message = e.args[0]
         except Exception as e:
             self.error_print(
                 f"Error occurred while fetching exception information. Details: {str(e)}")
