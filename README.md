@@ -35,6 +35,11 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 ## action: 'test connectivity'
 Validate credentials provided for connectivity
 
+Note: Even if the credentials are correct, if Infoblox
+is configured with an ACL that does not allow Splunk
+SOAR to authenticate to it, you will receive an
+authentication failure.
+
 Type: **test**  
 Read only: **True**
 
