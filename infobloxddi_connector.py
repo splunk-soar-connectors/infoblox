@@ -146,7 +146,7 @@ class InfobloxddiConnector(BaseConnector):
             error_text = f"Error code: {error_code}. Error message: {error_message}"
 
         return error_text
-    
+
     def _handler_for_domain(self, input_str):
         """
         This method returns the encoded|original string.
@@ -737,8 +737,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain_name = self._handler_for_domain(domain_name)
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
@@ -973,8 +973,8 @@ class InfobloxddiConnector(BaseConnector):
         try:
             domain_name = self._handler_for_domain(domain_name)
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
