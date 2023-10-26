@@ -147,6 +147,20 @@ class InfobloxddiConnector(BaseConnector):
 
         return error_text
 
+    def _handler_for_domain(self, input_str):
+        """
+        This method returns the encoded|original string.
+        :param input_str: Input string to be processed
+        :return: input_str in acceptable form
+        """
+
+        try:
+            input_str = input_str.encode('idna').decode('utf-8')
+        except:
+            self.debug_print("Error occurred while handling domain input string")
+
+        return input_str
+
     def _is_ip(self, cidr_ip_address):
         """ Function that checks given address and return True if address is valid IPv4/IPv6 address.
 
@@ -720,6 +734,12 @@ class InfobloxddiConnector(BaseConnector):
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
 
+        try:
+            domain_name = self._handler_for_domain(domain_name)
+        except Exception as e:
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
+
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
         # Optional parameters
@@ -949,6 +969,12 @@ class InfobloxddiConnector(BaseConnector):
         # Convert URL to domain
         if phantom.is_url(domain_name):
             domain_name = phantom.get_host_from_url(domain_name)
+
+        try:
+            domain_name = self._handler_for_domain(domain_name)
+        except Exception as e:
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, "Please provide a valid 'domain' parameter. {0}".format(error_message))
 
         rp_zone = param[consts.INFOBLOX_JSON_RP_ZONE]
 
