@@ -124,7 +124,7 @@ class InfobloxddiConnector(BaseConnector):
 
             :param e: Exception object
             :return: error message
-            """
+        """
         error_code = None
         error_message = consts.INFOBLOX_ERROR_MESSAGE_UNAVAILABLE
 
@@ -212,7 +212,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting rp_zone details
         if phantom.is_fail(rp_zone_details_status):
-            self.debug_print(consts.INFOBLOX_LIST_RP_ZONE_ERROR)
+            self.debug_print(consts.INFOBLOX_LIST_RP_ZONE_ERR)
             return action_result.get_status(), None
 
         return phantom.APP_SUCCESS, rpz_zone_details
@@ -247,11 +247,11 @@ class InfobloxddiConnector(BaseConnector):
 
         # Checking if Policy Rule of provided rp_zone is 'GIVEN'
         if rp_zone_details[consts.INFOBLOX_RPZ_POLICY] != consts.INFOBLOX_BLOCK_POLICY_RULE:
-            self.debug_print(consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERROR.format(rule_name=rp_zone_details[
+            self.debug_print(consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERR.format(rule_name=rp_zone_details[
                 consts.INFOBLOX_RPZ_POLICY
             ]))
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERROR.format(
+            return action_result.set_status(phantom.APP_ERROR, consts.INFOBLOX_RP_ZONE_POLICY_RULE_ERR.format(
                 rule_name=rp_zone_details[consts.INFOBLOX_RPZ_POLICY]
             ))
 
@@ -748,7 +748,7 @@ class InfobloxddiConnector(BaseConnector):
 
         rpz_rule_name = "{domain_name}.{rp_zone}".format(domain_name=domain_name, rp_zone=rp_zone)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
 
         # Checking if given rp_zone exists
         zone_details_param = {consts.INFOBLOX_PARAM_FQDN: rp_zone, consts.INFOBLOX_PARAM_VIEW: view}
@@ -824,7 +824,7 @@ class InfobloxddiConnector(BaseConnector):
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
         comment = param.get(consts.INFOBLOX_JSON_COMMENT)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
 
         rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address.lower(), rpz=rp_zone)
 
@@ -901,7 +901,7 @@ class InfobloxddiConnector(BaseConnector):
         # Optional parameter
         view = param.get(consts.INFOBLOX_JSON_NETWORK_VIEW, consts.INFOBLOX_NETWORK_VIEW_DEFAULT)
 
-        self.send_progress(consts.INFOBLOX_VALIDATE_MESSAGE)
+        self.send_progress(consts.INFOBLOX_VALIDATE_MSG)
 
         rpz_rule_name = "{ip_address}.{rpz}".format(ip_address=ip_address.lower(), rpz=rp_zone)
 
@@ -1090,7 +1090,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting ipv4 host details
         if phantom.is_fail(ipv4_hosts_status):
-            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
@@ -1114,7 +1114,7 @@ class InfobloxddiConnector(BaseConnector):
 
         # Something went wrong while getting ipv6 host details
         if phantom.is_fail(ipv6_hosts_status):
-            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERROR)
+            self.debug_print(consts.INFOBLOX_LIST_HOSTS_ERR)
             return action_result.get_status()
 
         # Loop through all the hosts and add to action_result
