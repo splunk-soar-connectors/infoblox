@@ -124,7 +124,7 @@ class InfobloxddiConnector(BaseConnector):
 
             :param e: Exception object
             :return: error message
-            """
+        """
         error_code = None
         error_message = consts.INFOBLOX_ERROR_MESSAGE_UNAVAILABLE
 
