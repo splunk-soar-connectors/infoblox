@@ -1,6 +1,6 @@
 # File: infobloxddi_consts.py
 #
-# Copyright (c) 2017-2023 Splunk Inc.
+# Copyright (c) 2017-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -88,21 +88,22 @@ INFOBLOX_RECORDS_IPv6_ENDPOINT = "/record:aaaa"
 INFOBLOX_NETWORK_ENDPOINT = "/network"
 
 # Return fields
-INFOBLOX_LEASE_RETURN_FIELDS = "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid," \
-                               "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol," \
-                               "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime," \
-                               "ipv6_prefix_bits,is_invalid_mac,never_ends,never_starts,next_binding_state,on_commit," \
-                               "on_expiry,on_release"
+INFOBLOX_LEASE_RETURN_FIELDS = (
+    "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid,"
+    "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol,"
+    "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime,"
+    "ipv6_prefix_bits,is_invalid_mac,never_ends,never_starts,next_binding_state,on_commit,"
+    "on_expiry,on_release"
+)
 INFOBLOX_RECORD_A_RETURN_FIELDS = "ipv4addr,name,view,zone,discovered_data"
 INFOBLOX_RECORD_AAAA_RETURN_FIELDS = "ipv6addr,name,view,zone,discovered_data"
 
 # Status messages for the application
 INFOBLOX_ERROR_CODE_UNAVAILABLE = "Error code unavailable"
-INFOBLOX_ERROR_MESSAGE_UNAVAILABLE = (
-    "Error message unavailable. Please check the asset configuration and|or the action parameters.")
+INFOBLOX_ERROR_MESSAGE_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or the action parameters."
 INFOBLOX_EXCEPTION_TYPE_ERROR = (
-    "Error occurred while connecting to the Infoblox server. "
-    "Please check the asset configuration and|or the action parameters.")
+    "Error occurred while connecting to the Infoblox server. Please check the asset configuration and|or the action parameters."
+)
 INFOBLOX_ERROR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_ERROR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERROR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
