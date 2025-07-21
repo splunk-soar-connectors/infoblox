@@ -348,9 +348,9 @@ class InfobloxddiConnector(BaseConnector):
             # request_obj.text is guaranteed to be NON None, it will be empty, but not None
             message = consts.INFOBLOX_ERROR_JSON_PARSE.format(raw_text=request_obj.text)
             error_message = self._get_error_message_from_exception(e)
-            self.debug_print("{}. {}".formate(message, error_message))
+            self.debug_print(f"{message}. {error_message}")
             # Set the action_result status to error, the handler function will most probably return as is
-            return action_result.set_status(phantom.APP_ERROR, "{}. {}".formate(message, error_message)), response_data
+            return action_result.set_status(phantom.APP_ERROR, f"{message}. {error_message}"), response_data
 
         if request_obj.status_code in SUCCESS_RESPONSE_CODES:
             response_data = {consts.INFOBLOX_RESPONSE_DATA: response_json_data, consts.INFOBLOX_JSON_CONTENT_TYPE: content_type}
