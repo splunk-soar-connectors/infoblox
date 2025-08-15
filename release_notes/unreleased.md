@@ -1,3 +1,4 @@
 **Unreleased**
 * Resolved app issues related to Python 3.13 upgrade
-* Update Python version for 3.13
+* Remove beautifulsoup4 from requirements.txt
+* Update python_version to 3.13
