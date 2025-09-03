@@ -19,7 +19,7 @@
     "latest_tested_versions": [
         "Infoblox DDI v7.3.9"
     ],
-    "python_version": "3",
+    "python_version": "3.9, 3.13",
     "configuration": {
         "url": {
             "required": true,
