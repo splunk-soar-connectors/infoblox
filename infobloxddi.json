@@ -28,7 +28,7 @@
             "order": 0
         },
         "verify_server_cert": {
-            "default": false,
+            "default": true,
             "description": "Verify server certificate",
             "data_type": "boolean",
             "order": 1

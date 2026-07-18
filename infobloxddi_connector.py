@@ -89,7 +89,7 @@ class InfobloxddiConnector(BaseConnector):
         self._url = None
         self._api_username = None
         self._api_password = None
-        self._verify_server_cert = False
+        self._verify_server_cert = True
         self._sess_obj = None
         self._state = None
         return
@@ -109,7 +109,7 @@ class InfobloxddiConnector(BaseConnector):
         self._url = config[consts.INFOBLOX_CONFIG_URL].strip("/")
         self._api_username = config[consts.INFOBLOX_CONFIG_USERNAME]
         self._api_password = config[consts.INFOBLOX_CONFIG_PASSWORD]
-        self._verify_server_cert = config.get(consts.INFOBLOX_CONFIG_VERIFY_SERVER_CERT, False)
+        self._verify_server_cert = config.get(consts.INFOBLOX_CONFIG_VERIFY_SERVER_CERT, True)
 
         # Custom validation for IP address
         self.set_validator(consts.INFOBLOX_JSON_IP, self._is_ip)
