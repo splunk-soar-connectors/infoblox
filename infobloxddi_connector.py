@@ -406,8 +406,21 @@ class InfobloxddiConnector(BaseConnector):
             consts.INFOBLOX_JSON_PAGING: 1,
             consts.INFOBLOX_JSON_RETURN_AS_OBJECT: 1,
         }
+        seen_page_ids = set()
 
         while paged_params.get(consts.INFOBLOX_JSON_PAGE_ID) is not None:
+            page_id = paged_params[consts.INFOBLOX_JSON_PAGE_ID]
+            if page_count >= consts.INFOBLOX_MAX_PAGE_COUNT:
+                return action_result.set_status(
+                    phantom.APP_ERROR,
+                    f"Stopped pagination after the maximum of {consts.INFOBLOX_MAX_PAGE_COUNT} pages",
+                ), None
+            if page_id in seen_page_ids:
+                return action_result.set_status(
+                    phantom.APP_ERROR,
+                    "Stopped pagination because the server repeated next_page_id",
+                ), None
+            seen_page_ids.add(page_id)
             page_count += 1
             self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
 
