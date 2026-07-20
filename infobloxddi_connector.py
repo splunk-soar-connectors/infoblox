@@ -1,6 +1,6 @@
 # File: infobloxddi_connector.py
 #
-# Copyright (c) 2017-2025 Splunk Inc.
+# Copyright (c) 2017-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ class InfobloxddiConnector(BaseConnector):
         self._url = None
         self._api_username = None
         self._api_password = None
-        self._verify_server_cert = False
+        self._verify_server_cert = True
         self._sess_obj = None
         self._state = None
         return
@@ -109,7 +109,7 @@ class InfobloxddiConnector(BaseConnector):
         self._url = config[consts.INFOBLOX_CONFIG_URL].strip("/")
         self._api_username = config[consts.INFOBLOX_CONFIG_USERNAME]
         self._api_password = config[consts.INFOBLOX_CONFIG_PASSWORD]
-        self._verify_server_cert = config.get(consts.INFOBLOX_CONFIG_VERIFY_SERVER_CERT, False)
+        self._verify_server_cert = config.get(consts.INFOBLOX_CONFIG_VERIFY_SERVER_CERT, True)
 
         # Custom validation for IP address
         self.set_validator(consts.INFOBLOX_JSON_IP, self._is_ip)
@@ -406,8 +406,21 @@ class InfobloxddiConnector(BaseConnector):
             consts.INFOBLOX_JSON_PAGING: 1,
             consts.INFOBLOX_JSON_RETURN_AS_OBJECT: 1,
         }
+        seen_page_ids = set()
 
         while paged_params.get(consts.INFOBLOX_JSON_PAGE_ID) is not None:
+            page_id = paged_params[consts.INFOBLOX_JSON_PAGE_ID]
+            if page_count >= consts.INFOBLOX_MAX_PAGE_COUNT:
+                return action_result.set_status(
+                    phantom.APP_ERROR,
+                    f"Stopped pagination after the maximum of {consts.INFOBLOX_MAX_PAGE_COUNT} pages",
+                ), None
+            if page_id in seen_page_ids:
+                return action_result.set_status(
+                    phantom.APP_ERROR,
+                    "Stopped pagination because the server repeated next_page_id",
+                ), None
+            seen_page_ids.add(page_id)
             page_count += 1
             self.debug_print(consts.INFOBLOX_PAGE_COUNT.format(page_count))
 

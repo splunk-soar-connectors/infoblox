@@ -1,6 +1,6 @@
 # File: infobloxddi_consts.py
 #
-# Copyright (c) 2017-2025 Splunk Inc.
+# Copyright (c) 2017-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MESSAGE = "Internal server error"
 INFOBLOX_ERROR_API_UNSUPPORTED_METHOD = "Unsupported method {method}"
 INFOBLOX_EXCEPTION_OCCURRED = "Exception occurred"
 INFOBLOX_PAGE_COUNT = "Making paged request... #{0}"
+INFOBLOX_MAX_PAGE_COUNT = 100
 INFOBLOX_PARAM_VIEW = "view"
 INFOBLOX_PARAM_CANONICAL = "canonical"
 INFOBLOX_PARAM_FQDN = "fqdn"

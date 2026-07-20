@@ -1,9 +1,9 @@
 # Infoblox DDI
 
-Publisher: Splunk \
-Connector Version: 2.1.6 \
-Product Vendor: Infoblox \
-Product Name: Infoblox DDI \
+Publisher: Splunk <br>
+Connector Version: 2.1.6 <br>
+Product Vendor: Infoblox <br>
+Product Name: Infoblox DDI <br>
 Minimum Product Version: 6.1.0
 
 This app supports various containment and investigative actions on Infoblox Grid Manager
@@ -21,22 +21,22 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate credentials provided for connectivity \
-[list network view](#action-list-network-view) - List available network views \
-[get network info](#action-get-network-info) - List available networks \
-[get system info](#action-get-system-info) - Get the leases for the given IP/domain \
-[unblock ip](#action-unblock-ip) - Unblock an IP \
-[block ip](#action-block-ip) - Block an IP \
-[unblock domain](#action-unblock-domain) - Unblock a domain \
-[block domain](#action-block-domain) - Block a domain \
-[list rpz](#action-list-rpz) - List details of Response Policy Zones \
+[test connectivity](#action-test-connectivity) - Validate credentials provided for connectivity <br>
+[list network view](#action-list-network-view) - List available network views <br>
+[get network info](#action-get-network-info) - List available networks <br>
+[get system info](#action-get-system-info) - Get the leases for the given IP/domain <br>
+[unblock ip](#action-unblock-ip) - Unblock an IP <br>
+[block ip](#action-block-ip) - Block an IP <br>
+[unblock domain](#action-unblock-domain) - Unblock a domain <br>
+[block domain](#action-block-domain) - Block a domain <br>
+[list rpz](#action-list-rpz) - List details of Response Policy Zones <br>
 [list hosts](#action-list-hosts) - List available hosts
 
 ## action: 'test connectivity'
 
 Validate credentials provided for connectivity
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 Note: Even if the credentials are correct, if Infoblox is configured with an ACL that does not allow Splunk SOAR to authenticate to it, you will receive an authentication failure.
@@ -53,7 +53,7 @@ No Output
 
 List available network views
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -78,7 +78,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List available networks
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 Get network information for an IP or IP range (in CIDR notation). If an IP is not provided, return all network ranges.
@@ -110,7 +110,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get the leases for the given IP/domain
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 Default value for <b>network_view</b> is 'default'. This action will not fetch system information of a host that has static IP and belongs to a non-default network view.
@@ -174,7 +174,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Unblock an IP
 
-Type: **correct** \
+Type: **correct** <br>
 Read only: **False**
 
 This action uses a multistep approach to unblock the IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address.</ul>Default value for <b>network_view</b> is 'default'.
@@ -205,7 +205,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Block an IP
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 This action blocks the IP by creating an appropriate RPZ. It blocks the domain by modifying the response of the DNS recursive query. The domain will not resolve the IP address/network. If all the IP addresses of the domain are blocked, the domain will be blocked. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. The RPZs are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses a multistep approach to block the IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address. If another RPZ rule with a specified IP already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.
@@ -238,7 +238,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Unblock a domain
 
-Type: **correct** \
+Type: **correct** <br>
 Read only: **False**
 
 This action uses a multistep approach to unblock the domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain.</ul>Default value for <b>network_view</b> is 'default'.
@@ -269,7 +269,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Block a domain
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 This action blocks the domain by creating appropriate RPZ. Each RPZ can have various rules associated with it. The response of a recursive query is modified if it matches any of the RPZ rules. The responses are first matched with the RPZ rules, and if there is a match, the rule defined at the RPZ level override is used. The override depends on the order of RPZ. The RPZs are prioritized in ascending order. Ensure that the specified RPZ has policy override 'None(GIVEN)', so that rule defined at RPZ level override is used. This action uses a multistep approach to block the domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Add the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain. If another RPZ rule with a specified domain already exists with other than (No Such Domain) policy, the action will fail.</li></ul>Default value for <b>network_view</b> is 'default'.
@@ -302,7 +302,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List details of Response Policy Zones
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 Default value for <b>network_view</b> is 'default'.
@@ -341,7 +341,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List available hosts
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -371,7 +371,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

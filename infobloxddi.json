@@ -4,7 +4,7 @@
     "description": "This app supports various containment and investigative actions on Infoblox Grid Manager",
     "publisher": "Splunk",
     "package_name": "phantom_infobloxddi",
-    "license": "Copyright (c) 2017-2025 Splunk Inc.",
+    "license": "Copyright (c) 2017-2026 Splunk Inc.",
     "main_module": "infobloxddi_connector.py",
     "type": "network security",
     "app_version": "2.1.6",
@@ -28,7 +28,7 @@
             "order": 0
         },
         "verify_server_cert": {
-            "default": false,
+            "default": true,
             "description": "Verify server certificate",
             "data_type": "boolean",
             "order": 1
@@ -1500,5 +1500,11 @@
                 }
             ]
         }
-    ]
+    ],
+    "pip39_dependencies": {
+        "wheel": []
+    },
+    "pip313_dependencies": {
+        "wheel": []
+    }
 }
