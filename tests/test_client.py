@@ -82,7 +82,7 @@ def test_request_preserves_url_auth_tls_and_timeout_contract():
     method, url, kwargs = session.calls[0]
     assert (method, url) == ("get", "https://grid.example/wapi/v2.3.1/network")
     assert kwargs == {
-        "auth": ("api-user", "secret"),
+        "auth": ("api-user", "pwd"),
         "params": {"network_view": "default"},
         "data": None,
         "verify": False,

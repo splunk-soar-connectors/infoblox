@@ -14,6 +14,7 @@
 """Splunk SOAR SDK application entry point for Infoblox DDI."""
 
 from soar_sdk.abstract import SOARClient
+from soar_sdk.actions_manager import ActionsManager
 from soar_sdk.app import App
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.logging import getLogger
@@ -27,6 +28,16 @@ from .legacy_metadata import apply_legacy_output_metadata
 
 
 logger = getLogger()
+
+
+class LegacyActionAliasManager(ActionsManager):
+    """Route the removed legacy connectivity identifier to the SDK test hook."""
+
+    _action_aliases = {"test_asset_connectivity": "test_connectivity"}
+
+    def get_action(self, identifier: str):
+        """Resolve legacy playbook action identifiers without manifest duplicates."""
+        return super().get_action(self._action_aliases.get(identifier, identifier))
 
 
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
@@ -70,6 +81,8 @@ def create_infoblox_app() -> App:
         fips_compliant=False,
         asset_cls=Asset,
     )
+    # Keep one test action in the manifest while continuing to dispatch old playbooks.
+    app.actions_manager = LegacyActionAliasManager()
     register_actions(app)
     app.test_connectivity()(test_connectivity)
     apply_legacy_output_metadata(app)

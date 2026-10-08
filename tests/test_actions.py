@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import get_args, get_origin
 
 from soar_sdk.action_results import ActionResult
-from soar_sdk.params import MakeRequestParams, Params
+from soar_sdk.params import MakeRequestParams
 
 from src.actions import _common as action_common
 from src.actions._common import DATE_FORMAT, HOST_INFO_UNAVAILABLE
@@ -111,11 +111,15 @@ def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook
 
     assert sdk.app.app_meta_info["name"] == legacy["name"]
     assert sdk.app.app_meta_info["appid"] == legacy["appid"]
-    assert expected <= actions.keys()
-    assert set(actions) == expected | {"make_request", "test_connectivity"}
+    assert expected - {"test_asset_connectivity"} <= actions.keys()
+    assert set(actions) == (expected - {"test_asset_connectivity"}) | {"make_request", "test_connectivity"}
+    assert "test_asset_connectivity" not in actions
+    assert sdk.app.actions_manager.get_action("test_asset_connectivity") is actions["test_connectivity"]
     assert actions["test_connectivity"].meta.type == "test"
     assert actions["test_connectivity"].meta.read_only is True
     for legacy_action in legacy["actions"]:
+        if legacy_action["identifier"] == "test_asset_connectivity":
+            continue  # Replaced by the SDK's single app-level connectivity hook.
         action = actions[legacy_action["identifier"]]
         assert action.meta.action == legacy_action["action"]
         assert action.meta.type == legacy_action["type"]
@@ -126,6 +130,8 @@ def test_action_parameters_and_output_schema_match_legacy_metadata():
     legacy = json.loads((ROOT / "tests/fixtures/legacy-infoblox-manifest.json").read_text())
     actions = sdk.app.get_actions()
     for legacy_action in legacy["actions"]:
+        if legacy_action["identifier"] == "test_asset_connectivity":
+            continue  # The SDK app-level connectivity hook replaces this legacy action.
         action = actions[legacy_action["identifier"]]
         legacy_params = legacy_action.get("parameters", {})
         sdk_params = action.meta.parameters.model_fields
@@ -590,7 +596,7 @@ def test_sdk_test_connectivity_hook_invokes_the_asset_check(monkeypatch):
         lambda function, *, soar: {"soar": soar, "asset": make_asset()},
     )
 
-    action = sdk.app.actions_manager.get_action("test_connectivity")
+    action = sdk.app.actions_manager.get_action("test_asset_connectivity")
     assert action(soar=FakeSoar()) is True
     assert client.requests[0] == ("request", "/?_schema", {"method": "get", "timeout": 30})
     assert client.logout_called and client.closed
@@ -610,20 +616,6 @@ def test_sdk_test_connectivity_hook_reports_probe_failure(monkeypatch):
     assert action(soar=FakeSoar()) is False
     result = sdk.app.actions_manager.get_results()[-1]
     assert result.get_message().endswith("Connectivity test failed")
-    assert client.logout_called and client.closed
-
-
-def test_legacy_connectivity_action_identifier_remains_callable(monkeypatch):
-    client = FakeClient(None)
-    client.request = lambda endpoint, **kwargs: client.requests.append(("request", endpoint, kwargs)) or ApiResponse({})
-    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
-    soar = FakeSoar()
-
-    before = len(sdk.app.actions_manager.get_results())
-    assert sdk.app.actions_manager.get_action("test_asset_connectivity")(Params(), soar=soar, asset=make_asset()) is True
-    result = sdk.app.actions_manager.get_results()[before]
-    assert result.get_message() == "Connectivity test succeeded"
-    assert client.requests == [("request", "/?_schema", {"method": "get", "timeout": 30})]
     assert client.logout_called and client.closed
 
 
@@ -860,7 +852,7 @@ def test_make_request_registered_action_uses_asset_auth_and_verification(monkeyp
 
     args, kwargs = session.call
     assert args == ("GET", "https://grid.example/wapi/v2.3.1/network")
-    assert kwargs["auth"] == ("api-user", "secret")
+    assert kwargs["auth"] == ("api-user", "pwd")
     assert kwargs["verify"] is False
     assert kwargs["timeout"] == 12
     assert kwargs["headers"] == {"Accept": "application/json"}

@@ -15,13 +15,9 @@
 
 from typing import Any
 
-from soar_sdk.abstract import SOARClient
 from soar_sdk.params import Params
 
-from ..asset import Asset
 from ..infoblox_client import DEFAULT_TIMEOUT, InfobloxApiError, InfobloxClient
-from ._common import _run_action
-from ._models import EmptySummary
 
 
 def _test_connectivity_handler(client: InfobloxClient, _params: Params) -> dict[str, Any]:
@@ -30,8 +26,3 @@ def _test_connectivity_handler(client: InfobloxClient, _params: Params) -> dict[
     except InfobloxApiError:
         return {"success": False, "message": "Connectivity test failed"}
     return {"success": True, "message": "Connectivity test succeeded"}
-
-
-def test_asset_connectivity(params: Params, soar: SOARClient, asset: Asset):
-    """Retain the legacy action identifier for existing playbooks."""
-    return _run_action(params, asset, soar, EmptySummary, _test_connectivity_handler)

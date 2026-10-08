@@ -14,7 +14,6 @@
 """Register Infoblox actions with the SOAR SDK application."""
 
 from soar_sdk.app import App
-from soar_sdk.params import Params
 
 from ._models import (
     BlockDomainParams,
@@ -22,8 +21,6 @@ from ._models import (
     BlockIpParams,
     DomainOutput,
     DomainRpzParams,
-    EmptyOutput,
-    EmptySummary,
     GetNetworkInfoOutput,
     GetNetworkInfoParams,
     GetNetworkInfoSummary,
@@ -44,7 +41,6 @@ from ._models import (
 )
 from .block_domain import block_domain
 from .block_ip import block_ip
-from .connectivity import test_asset_connectivity
 from .get_network_info import get_network_info
 from .get_system_info import get_system_info
 from .list_hosts import list_hosts
@@ -57,18 +53,6 @@ from .unblock_ip import unblock_ip
 
 def register_actions(app: App) -> App:
     """Register legacy playbook actions and the SDK make_request action."""
-    app.register_action(
-        test_asset_connectivity,
-        name="test connectivity",
-        identifier="test_asset_connectivity",
-        description="Validate credentials provided for connectivity",
-        verbose="Note: Even if the credentials are correct, if Infoblox is configured with an ACL that does not allow Splunk SOAR to authenticate to it, you will receive an authentication failure.",
-        action_type="test",
-        read_only=True,
-        params_class=Params,
-        output_class=EmptyOutput,
-        summary_type=EmptySummary,
-    )
     app.register_action(
         list_network_view,
         name="list network view",

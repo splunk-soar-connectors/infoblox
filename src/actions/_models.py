@@ -23,14 +23,6 @@ from ..infoblox_client import DEFAULT_NETWORK_VIEW
 from ._common import _is_ip
 
 
-class EmptyOutput(ActionOutput):
-    """Metadata placeholder for the legacy connectivity action."""
-
-
-class EmptySummary(ActionOutput):
-    """Preserve the legacy connectivity action's empty summary."""
-
-
 class LegacyStringSummary(ActionOutput):
     """Legacy RPZ mutation actions exposed the empty summary as a string path."""
 

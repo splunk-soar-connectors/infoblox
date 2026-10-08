@@ -21,7 +21,6 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate credentials provided for connectivity <br>
 [list network view](#action-list-network-view) - List available network views <br>
 [get network info](#action-get-network-info) - List available networks <br>
 [get system info](#action-get-system-info) - Get the leases for the given IP/domain <br>
@@ -33,23 +32,6 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [list hosts](#action-list-hosts) - List available hosts <br>
 [make request](#action-make-request) - Send an authenticated request to an Infoblox WAPI endpoint. <br>
 [test connectivity](#action-test-connectivity) - Check the Infoblox WAPI connection using the configured asset.
-
-## action: 'test connectivity'
-
-Validate credentials provided for connectivity
-
-Type: **test** <br>
-Read only: **True**
-
-Note: Even if the credentials are correct, if Infoblox is configured with an ACL that does not allow Splunk SOAR to authenticate to it, you will receive an authentication failure.
-
-#### Action Parameters
-
-No parameters are required for this action
-
-#### Action Output
-
-No Output
 
 ## action: 'list network view'
 

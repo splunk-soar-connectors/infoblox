@@ -105,10 +105,6 @@ class LegacyOutputActionMeta(ActionMeta):
         if output is None:
             return metadata
 
-        if self.identifier == "test_asset_connectivity":
-            metadata["output"] = []
-            return metadata
-
         for field in output:
             datapath = field["data_path"]
             if datapath.startswith("action_result.parameter."):
@@ -130,7 +126,7 @@ class LegacyOutputActionMeta(ActionMeta):
 def apply_legacy_output_metadata(app: App) -> None:
     """Wrap legacy action metadata with exact manifest compatibility overrides."""
     for action in app.get_actions().values():
-        if action.meta.identifier not in LEGACY_MESSAGE_METADATA and action.meta.identifier != "test_asset_connectivity":
+        if action.meta.identifier not in LEGACY_MESSAGE_METADATA:
             continue
         metadata = action.meta
         action.meta = LegacyOutputActionMeta(
