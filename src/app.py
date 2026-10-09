@@ -21,6 +21,7 @@ from soar_sdk.logging import getLogger
 from soar_sdk.params import Params
 
 from .actions import register_actions
+from .actions._common import _is_ip
 from .actions.connectivity import _test_connectivity_handler
 from .asset import Asset
 from .infoblox_client import InfobloxApiError, InfobloxClient, exception_message
@@ -34,6 +35,16 @@ class LegacyActionAliasManager(ActionsManager):
     """Route the removed legacy connectivity identifier to the SDK test hook."""
 
     _action_aliases = {"test_asset_connectivity": "test_connectivity"}
+
+    def initialize(self):
+        """Restore the legacy custom IP validator before BaseConnector validates inputs."""
+        result = super().initialize()
+        set_validator = getattr(self, "set_validator", None)
+        if callable(set_validator):
+            # The legacy connector replaced SOAR's default `contains: ip`
+            # validation so IPv6 addresses and CIDR networks remain accepted.
+            set_validator("ip", _is_ip)
+        return result
 
     def get_action(self, identifier: str):
         """Resolve legacy playbook action identifiers without manifest duplicates."""

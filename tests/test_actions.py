@@ -127,6 +127,27 @@ def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook
         assert action.meta.read_only is legacy_action["read_only"]
 
 
+def test_action_manager_restores_legacy_contains_ip_validator(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        sdk.LegacyActionAliasManager,
+        "set_validator",
+        lambda manager, contains, validator: calls.append((contains, validator)),
+        raising=False,
+    )
+
+    manager = sdk.LegacyActionAliasManager()
+    assert manager.initialize()
+
+    assert len(calls) == 1
+    contains, validator = calls[0]
+    assert contains == "ip"
+    for value in ("2001:db8:abcd:12::", "1.1.1.0/28", "10.0.0.5"):
+        assert validator(value)
+    for value in ("not-an-ip", ""):
+        assert not validator(value)
+
+
 def test_action_parameters_and_output_schema_match_legacy_metadata():
     legacy = json.loads((ROOT / "tests/fixtures/legacy-infoblox-manifest.json").read_text())
     actions = sdk.app.get_actions()
