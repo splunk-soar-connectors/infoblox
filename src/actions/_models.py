@@ -74,7 +74,8 @@ class GetNetworkInfoParams(Params):
     @field_validator("ip")
     @classmethod
     def validate_ip(cls, value: str | None) -> str | None:
-        if value and not _is_ip(value):
+        # The legacy global validator skipped omitted optional parameters.
+        if value is not None and not _is_ip(value):
             raise ValueError("parameter 'ip' validation failed")
         return value
 
@@ -193,6 +194,13 @@ class IpRpzParams(Params):
         cef_types=["infoblox view"],
         column_name="Network View",
     )
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, value: str) -> str:
+        if not _is_ip(value):
+            raise ValueError("parameter 'ip' validation failed")
+        return value
 
 
 class BlockIpParams(IpRpzParams):

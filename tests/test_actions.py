@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 from typing import get_args, get_origin
 
+import pytest
 from soar_sdk.action_results import ActionResult
 from soar_sdk.params import MakeRequestParams
 
@@ -280,6 +281,23 @@ def test_get_network_info_filters_host_address_without_losing_structures(monkeyp
         )
     ]
     assert sdk.app.actions_manager.get_results()[before].get_summary() == {"number_of_matching_networks": 0}
+
+
+@pytest.mark.parametrize(
+    ("params_class", "required_values"),
+    [
+        (GetNetworkInfoParams, {}),
+        (IpRpzParams, {"rp_zone": "block.example"}),
+        (BlockIpParams, {"rp_zone": "block.example"}),
+    ],
+)
+def test_ip_parameters_match_legacy_connector_validator(params_class, required_values):
+    for value in ("10.0.0.5", "2001:db8:abcd:12::", "1.1.1.0/28"):
+        params_class.model_validate({**required_values, "ip": value})
+
+    for value in ("not-an-ip", ""):
+        with pytest.raises(ValueError, match="parameter 'ip' validation failed"):
+            params_class.model_validate({**required_values, "ip": value})
 
 
 def test_get_system_info_preserves_types_and_has_no_time_filter(monkeypatch):

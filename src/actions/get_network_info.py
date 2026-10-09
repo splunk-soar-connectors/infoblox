@@ -20,14 +20,16 @@ from soar_sdk.abstract import SOARClient
 
 from ..asset import Asset
 from ..infoblox_client import InfobloxClient
-from ._common import _run_action
+from ._common import _is_ip, _run_action
 from ._models import GetNetworkInfoParams, GetNetworkInfoSummary
 
 
 def _get_network_info_handler(client: InfobloxClient, params: GetNetworkInfoParams) -> dict[str, Any]:
     search_ip: str | None = None
     query: dict[str, Any] = {}
-    if params.ip:
+    # Keep the handler's legacy defensive check in addition to the SDK model
+    # validator, which replaces the connector's global set_validator("ip", ...).
+    if params.ip and _is_ip(params.ip):
         if "/" in params.ip:
             query["network"] = params.ip
         else:
