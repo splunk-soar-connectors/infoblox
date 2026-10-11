@@ -15,40 +15,17 @@
 
 from soar_sdk.app import App
 
-from ._models import (
-    BlockDomainParams,
-    BlockIpOutput,
-    BlockIpParams,
-    DomainOutput,
-    DomainRpzParams,
-    GetNetworkInfoOutput,
-    GetNetworkInfoParams,
-    GetNetworkInfoSummary,
-    GetSystemInfoOutput,
-    GetSystemInfoParams,
-    GetSystemInfoSummary,
-    IpRpzParams,
-    LegacyStringSummary,
-    ListHostsOutput,
-    ListHostsParams,
-    ListHostsSummary,
-    ListNetworkViewOutput,
-    ListNetworkViewParams,
-    ListNetworkViewSummary,
-    ListRpzOutput,
-    ListRpzParams,
-    ListRpzSummary,
-)
-from .block_domain import block_domain
-from .block_ip import block_ip
-from .get_network_info import get_network_info
-from .get_system_info import get_system_info
-from .list_hosts import list_hosts
-from .list_network_view import list_network_view
-from .list_rpz import list_rpz
+from ._common import LegacyStringSummary
+from .block_domain import BlockDomainParams, DomainOutput as BlockDomainOutput, block_domain
+from .block_ip import BlockIpOutput, BlockIpParams, block_ip
+from .get_network_info import GetNetworkInfoOutput, GetNetworkInfoParams, GetNetworkInfoSummary, get_network_info
+from .get_system_info import GetSystemInfoOutput, GetSystemInfoParams, GetSystemInfoSummary, get_system_info
+from .list_hosts import ListHostsOutput, ListHostsParams, ListHostsSummary, list_hosts
+from .list_network_view import ListNetworkViewOutput, ListNetworkViewParams, ListNetworkViewSummary, list_network_view
+from .list_rpz import ListRpzOutput, ListRpzParams, ListRpzSummary, list_rpz
 from .make_request import make_request
-from .unblock_domain import unblock_domain
-from .unblock_ip import unblock_ip
+from .unblock_domain import DomainOutput as UnblockDomainOutput, DomainRpzParams, unblock_domain
+from .unblock_ip import BlockIpOutput as UnblockIpOutput, IpRpzParams, unblock_ip
 
 
 def register_actions(app: App) -> App:
@@ -113,7 +90,7 @@ def register_actions(app: App) -> App:
         action_type="correct",
         read_only=False,
         params_class=IpRpzParams,
-        output_class=BlockIpOutput,
+        output_class=UnblockIpOutput,
         summary_type=LegacyStringSummary,
         render_as="table",
     )
@@ -126,7 +103,7 @@ def register_actions(app: App) -> App:
         action_type="contain",
         read_only=False,
         params_class=BlockDomainParams,
-        output_class=DomainOutput,
+        output_class=BlockDomainOutput,
         summary_type=LegacyStringSummary,
         render_as="table",
     )
@@ -139,7 +116,7 @@ def register_actions(app: App) -> App:
         action_type="correct",
         read_only=False,
         params_class=DomainRpzParams,
-        output_class=DomainOutput,
+        output_class=UnblockDomainOutput,
         summary_type=LegacyStringSummary,
         render_as="table",
     )

@@ -69,7 +69,7 @@ def make_request(params: MakeRequestParams, asset: Asset) -> MakeRequestOutput:
             params=query_parameters,
             data=params.body or None,
             timeout=params.timeout,
-            verify=client.verify_ssl,
+            verify=params.verify_ssl,
         )
         return MakeRequestOutput(
             status_code=response.status_code,

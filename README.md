@@ -49,12 +49,12 @@ No parameters are required for this action
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Total network view: 2 |
 action_result.data.\*.\_ref | string | | networkview/AA1aAa1aaAaa1Aa1aAa:default/true |
 action_result.data.\*.comment | string | | Test comment |
-action_result.data.\*.name | string | `infoblox view` | default |
 action_result.data.\*.is_default | boolean | | True False |
+action_result.data.\*.name | string | `infoblox view` | default |
 action_result.summary.total_network_view | numeric | | 2 |
+action_result.message | string | | Total network view: 2 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -79,14 +79,14 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Number of matching networks: 1 |
 action_result.parameter.ip | string | `ip` | 10.0.0.5 |
 action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
 action_result.data.\*.\_ref | string | | range/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.1/10.254.254.254/Internal%20Networks |
+action_result.data.\*.comment | string | | Example of a comment |
 action_result.data.\*.network | string | `ip` | 10.0.0.0/8 |
 action_result.data.\*.network_view | string | `infoblox view` | Internal Networks |
-action_result.data.\*.comment | string | | Example of a comment |
 action_result.summary.number_of_matching_networks | numeric | | 1 |
+action_result.message | string | | Number of matching networks: 1 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -111,26 +111,22 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Mac address: 0a:10:10:a0:a0:10, Is static ip: True |
 action_result.parameter.ip_hostname | string | `ip` `host name` | 10.0.0.5 |
 action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
-action_result.data.\*.address | string | `ip` | 10.0.0.5 |
-action_result.data.\*.client_hostname | string | `host name` | |
-action_result.data.\*.server_host_name | string | `host name` | test-01.lab.test.local |
-action_result.data.\*.os | string | | Linux |
-action_result.data.\*.binding_state | string | | FREE |
-action_result.data.\*.starts | string | | 2010-10-10 10:11:12 |
-action_result.data.\*.ends | string | | 2010-10-10 12:11:12 |
-action_result.data.\*.cltt | string | | 2010-10-10 10:11:12 |
-action_result.data.\*.network | string | | |
 action_result.data.\*.\_ref | string | | lease/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5/default |
+action_result.data.\*.address | string | `ip` | 10.0.0.5 |
 action_result.data.\*.billing_class | string | | |
+action_result.data.\*.binding_state | string | | FREE |
+action_result.data.\*.client_hostname | string | `host name` | |
+action_result.data.\*.cltt | string | | 2010-10-10 10:11:12 |
+action_result.data.\*.ends | string | | 2010-10-10 12:11:12 |
 action_result.data.\*.hardware | string | `mac address` | 0a:10:10:a0:a0:10 |
 action_result.data.\*.ipv6_duid | string | | |
 action_result.data.\*.ipv6_iaid | string | | |
 action_result.data.\*.ipv6_preferred_lifetime | numeric | | 604800 |
 action_result.data.\*.ipv6_prefix_bits | numeric | | 48 |
 action_result.data.\*.is_invalid_mac | boolean | | True False |
+action_result.data.\*.network | string | | |
 action_result.data.\*.network_view | string | `infoblox view` | default |
 action_result.data.\*.never_ends | boolean | | True False |
 action_result.data.\*.never_starts | boolean | | True False |
@@ -139,9 +135,12 @@ action_result.data.\*.on_commit | string | | |
 action_result.data.\*.on_expiry | string | | |
 action_result.data.\*.on_release | string | | |
 action_result.data.\*.option | string | | |
+action_result.data.\*.os | string | | Linux |
 action_result.data.\*.protocol | string | | IPV4 |
 action_result.data.\*.remote_id | string | | |
 action_result.data.\*.served_by | string | `ip` | 10.0.0.7 |
+action_result.data.\*.server_host_name | string | `host name` | test-01.lab.test.local |
+action_result.data.\*.starts | string | | 2010-10-10 10:11:12 |
 action_result.data.\*.tsfp | string | | 1504274705 |
 action_result.data.\*.tstp | string | | 1504274905 |
 action_result.data.\*.uid | string | | |
@@ -151,6 +150,7 @@ action_result.summary.binding_state | string | | |
 action_result.summary.is_static_ip | boolean | | True False |
 action_result.summary.mac_address | string | `mac address` | 0a:10:10:a0:a0:10 |
 action_result.summary.never_ends | boolean | | True False |
+action_result.message | string | | Mac address: 0a:10:10:a0:a0:10, Is static ip: True |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -177,13 +177,13 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | IP/CIDR blocked successfully |
-action_result.parameter.ip | string | `ip` | 10.0.0.5 |
-action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
-action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
 action_result.parameter.comment | string | | Test comment |
+action_result.parameter.ip | string | `ip` | 10.0.0.5 |
+action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
+action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
 action_result.data.\*.reference_link | string | | record:rpz:cname:ipaddress/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5.test_zone/default |
 action_result.summary | string | | |
+action_result.message | string | | IP/CIDR blocked successfully |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -209,12 +209,12 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | IP/CIDR unblocked successfully |
 action_result.parameter.ip | string | `ip` | 10.0.0.5 |
-action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
 action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
+action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
 action_result.data.\*.reference_link | string | | record:rpz:cname:ipaddress/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5.test_zone/default |
 action_result.summary | string | | |
+action_result.message | string | | IP/CIDR unblocked successfully |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -241,13 +241,13 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Domain blocked successfully |
-action_result.parameter.domain | string | `domain` `url` | example.com |
-action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
-action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
 action_result.parameter.comment | string | | Test comment |
+action_result.parameter.domain | string | `domain` `url` | example.com |
+action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
+action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
 action_result.data.\*.reference_link | string | | record:rpz:cname/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:www.test.abc.test_zone/default |
 action_result.summary | string | | |
+action_result.message | string | | Domain blocked successfully |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -273,12 +273,12 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Domain unblocked successfully |
 action_result.parameter.domain | string | `domain` `url` | example.com |
-action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
 action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
+action_result.parameter.rp_zone | string | `infoblox rpz` | testzone |
 action_result.data.\*.reference_link | string | | record:rpz:cname/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:www.test.abc.test_zone/default |
 action_result.summary | string | | |
+action_result.message | string | | Domain unblocked successfully |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -302,22 +302,22 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Total response policy zones: 3 |
 action_result.parameter.network_view | string | `infoblox view` | Internal Networks |
-action_result.data.\*.fqdn | string | `infoblox rpz` | test_fqdn |
-action_result.data.\*.rpz_type | string | | LOCAL |
-action_result.data.\*.rpz_policy | string | | GIVEN |
-action_result.data.\*.network_view | string | `infoblox view` | default |
-action_result.data.\*.rpz_severity | string | | MAJOR |
-action_result.data.\*.rpz_priority | numeric | | 1 |
-action_result.data.\*.rpz_last_updated_time | string | | |
-action_result.data.\*.comment | string | | Test comment |
 action_result.data.\*.\_ref | string | | zone_rp/AA1aAa1aaAaa1Aa1aAa:test/default |
+action_result.data.\*.comment | string | | Test comment |
 action_result.data.\*.disable | boolean | | True False |
+action_result.data.\*.fqdn | string | `infoblox rpz` | test_fqdn |
+action_result.data.\*.network_view | string | `infoblox view` | default |
 action_result.data.\*.ns_group | string | | PRIMARY |
 action_result.data.\*.primary_type | string | | Grid |
+action_result.data.\*.rpz_last_updated_time | string | | |
+action_result.data.\*.rpz_policy | string | | GIVEN |
+action_result.data.\*.rpz_priority | numeric | | 1 |
+action_result.data.\*.rpz_severity | string | | MAJOR |
+action_result.data.\*.rpz_type | string | | LOCAL |
 action_result.data.\*.substitute_name | string | | test_name |
 action_result.summary.total_response_policy_zones | numeric | | 3 |
+action_result.message | string | | Total response policy zones: 3 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 
@@ -337,17 +337,17 @@ No parameters are required for this action
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failed |
-action_result.message | string | | Total hosts: 1122 |
-action_result.data.\*.ip | string | `ip` | 10.0.0.5 |
-action_result.data.\*.name | string | `host name` | test |
-action_result.data.\*.view | string | `infoblox view` | External DNS |
-action_result.data.\*.zone | string | | example.com |
 action_result.data.\*.\_ref | string | | record:a/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:test_nv_a_record.test_zone/default.dns |
 action_result.data.\*.discovered_data.first_discovered | numeric | | 1495071666 |
 action_result.data.\*.discovered_data.last_discovered | numeric | | 1495071666 |
 action_result.data.\*.discovered_data.mac_address | string | `mac address` | 0a:10:10:a0:a0:10 |
 action_result.data.\*.discovered_data.os | string | | Linux |
+action_result.data.\*.ip | string | `ip` | 10.0.0.5 |
+action_result.data.\*.name | string | `host name` | test |
+action_result.data.\*.view | string | `infoblox view` | External DNS |
+action_result.data.\*.zone | string | | example.com |
 action_result.summary.total_hosts | numeric | | 1122 |
+action_result.message | string | | Total hosts: 1122 |
 summary.total_objects | numeric | | 1 |
 summary.total_objects_successful | numeric | | 1 |
 

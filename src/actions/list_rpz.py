@@ -17,29 +17,77 @@ import time
 from typing import Any
 
 from soar_sdk.abstract import SOARClient
+from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.params import Param, Params
 
 from ..asset import Asset
-from ..infoblox_client import DEFAULT_NETWORK_VIEW, InfobloxClient
-from ._common import DATE_FORMAT, _run_action
-from ._models import ListRpzParams, ListRpzSummary
+from ..consts import (
+    INFOBLOX_JSON_DATE_FORMAT,
+    INFOBLOX_JSON_ERROR_MESSAGE,
+    INFOBLOX_LAST_UPDATED_TIME,
+    INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE,
+    INFOBLOX_NETWORK_VIEW_DEFAULT,
+    INFOBLOX_RESOURCE_NOT_FOUND,
+    INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES,
+)
+from ..infoblox_client import InfobloxClient
+from ._common import _run_action
+
+
+class ListRpzParams(Params):
+    network_view: str | None = Param(
+        description="Network view",
+        default=INFOBLOX_NETWORK_VIEW_DEFAULT,
+        primary=True,
+        cef_types=["infoblox view"],
+    )
+
+
+class ListRpzOutput(ActionOutput):
+    fqdn: str | None = OutputField(
+        cef_types=["infoblox rpz"],
+        example_values=["test_fqdn"],
+        column_name="FQDN Of RPZ",
+    )
+    rpz_type: str | None = OutputField(example_values=["LOCAL"], column_name="Type")
+    rpz_policy: str | None = OutputField(example_values=["GIVEN"], column_name="RPZ Policy Override")
+    network_view: str | None = OutputField(
+        cef_types=["infoblox view"],
+        example_values=["default"],
+        column_name="Network View",
+    )
+    rpz_severity: str | None = OutputField(example_values=["MAJOR"], column_name="Severity")
+    rpz_priority: float | None = OutputField(example_values=[1], column_name="Priority")
+    rpz_last_updated_time: str | None = OutputField(column_name="Last Updated")
+    comment: str | None = OutputField(example_values=["Test comment"], column_name="Comment")
+    ref: str | None = OutputField(alias="_ref", example_values=["zone_rp/AA1aAa1aaAaa1Aa1aAa:test/default"])
+    disable: bool | None = None
+    ns_group: str | None = OutputField(example_values=["PRIMARY"])
+    primary_type: str | None = OutputField(example_values=["Grid"])
+    substitute_name: str | None = OutputField(example_values=["test_name"])
+
+
+class ListRpzSummary(ActionOutput):
+    total_response_policy_zones: int | None = OutputField(example_values=[3])
 
 
 def _list_rpz_handler(client: InfobloxClient, params: ListRpzParams) -> dict[str, Any]:
-    view = params.network_view if params.network_view is not None else DEFAULT_NETWORK_VIEW
+    # The Params default covers omitted inputs; preserve an explicit None.
+    view = params.network_view
     rows = client.rpz_details({"view": view}, allow_not_found=True)
-    if isinstance(rows, dict) and rows.get("resource_not_found"):
+    if isinstance(rows, dict) and rows.get(INFOBLOX_RESOURCE_NOT_FOUND):
         return {
             "success": False,
-            "message": rows.get("error_message", "This action gets the data from default network view only"),
+            "message": rows.get(INFOBLOX_JSON_ERROR_MESSAGE, INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE),
         }
     total = len(rows)
     for row in rows:
-        if row.get("rpz_last_updated_time"):
-            row["rpz_last_updated_time"] = time.strftime(DATE_FORMAT, time.localtime(row["rpz_last_updated_time"]))
+        if row.get(INFOBLOX_LAST_UPDATED_TIME):
+            row[INFOBLOX_LAST_UPDATED_TIME] = time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(row[INFOBLOX_LAST_UPDATED_TIME]))
     return {
         "success": True,
         "data": rows,
-        "summary": {"total_response_policy_zones": total},
+        "summary": {INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES: total},
     }
 
 

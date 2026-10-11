@@ -17,12 +17,20 @@ from typing import Any
 
 from soar_sdk.params import Params
 
-from ..infoblox_client import DEFAULT_TIMEOUT, InfobloxApiError, InfobloxClient
+from ..consts import (
+    DEFAULT_REQUEST_TIMEOUT,
+    INFOBLOX_JSON_MESSAGE,
+    INFOBLOX_JSON_SUCCESS,
+    INFOBLOX_TEST_CONN_FAILED,
+    INFOBLOX_TEST_CONN_SUCCESS,
+    INFOBLOX_TEST_ENDPOINT,
+)
+from ..infoblox_client import InfobloxApiError, InfobloxClient
 
 
 def _test_connectivity_handler(client: InfobloxClient, _params: Params) -> dict[str, Any]:
     try:
-        client.request("/?_schema", method="get", timeout=DEFAULT_TIMEOUT)
+        client.request(INFOBLOX_TEST_ENDPOINT, method="get", timeout=DEFAULT_REQUEST_TIMEOUT)
     except InfobloxApiError:
-        return {"success": False, "message": "Connectivity test failed"}
-    return {"success": True, "message": "Connectivity test succeeded"}
+        return {INFOBLOX_JSON_SUCCESS: False, INFOBLOX_JSON_MESSAGE: INFOBLOX_TEST_CONN_FAILED}
+    return {INFOBLOX_JSON_SUCCESS: True, INFOBLOX_JSON_MESSAGE: INFOBLOX_TEST_CONN_SUCCESS}

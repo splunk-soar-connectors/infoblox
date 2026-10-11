@@ -15,36 +15,56 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
 import requests
 
-
-WAPI_BASE = "/wapi/v2.3.1"
-DEFAULT_NETWORK_VIEW = "default"
-DEFAULT_TIMEOUT = 30
-PAGE_SIZE = 1000
-MAX_PAGE_COUNT = 100
-
-RETURN_FIELDS = "_return_fields"
-PAGING = "_paging"
-RETURN_AS_OBJECT = "_return_as_object"
-MAX_RESULTS = "_max_results"
-PAGE_ID = "_page_id"
-
-ERROR_MESSAGES = {
-    400: "Bad Request",
-    401: "Unauthorized",
-    403: "Forbidden",
-    404: "Not found",
-    405: "Method not allowed",
-    500: "Internal server error",
-}
-
-RPZ_FIELDS = (
-    "rpz_policy,fqdn,rpz_severity,disable,rpz_type,primary_type,ns_group,network_view,rpz_priority,rpz_last_updated_time,comment,substitute_name"
+from .consts import (
+    INFOBLOX_BASE_ENDPOINT,
+    INFOBLOX_ERROR_FROM_SERVER,
+    INFOBLOX_ERROR_JSON_PARSE,
+    INFOBLOX_ERROR_MESSAGE_UNAVAILABLE,
+    INFOBLOX_ERROR_SERVER_CONNECTION,
+    INFOBLOX_JSON_CONTENT_TYPE,
+    INFOBLOX_JSON_ERROR_MESSAGE,
+    INFOBLOX_JSON_MAX_RESULTS,
+    INFOBLOX_JSON_NEXT_PAGE_ID,
+    INFOBLOX_JSON_PAGE_ID,
+    INFOBLOX_JSON_PAGING,
+    INFOBLOX_JSON_RESULT,
+    INFOBLOX_JSON_RETURN_AS_OBJECT,
+    INFOBLOX_JSON_RETURN_FIELDS,
+    INFOBLOX_JSON_TEXT,
+    INFOBLOX_LIST_RP_ZONE_PARAMS,
+    INFOBLOX_LOGOUT,
+    INFOBLOX_MAX_PAGE_COUNT,
+    INFOBLOX_PAGE_SIZE,
+    INFOBLOX_PAGINATION_MAX_ERROR_FORMAT,
+    INFOBLOX_PAGINATION_REPEAT_ERROR,
+    INFOBLOX_RESOURCE_NOT_FOUND,
+    INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE,
+    INFOBLOX_REST_RESPONSE_MESSAGES,
+    INFOBLOX_RP_ZONE_DETAILS_ENDPOINT,
 )
+
+
+_ACTION_SESSION_SCOPE: ContextVar[dict[str, Any] | None] = ContextVar("infoblox_action_session_scope", default=None)
+
+
+@contextmanager
+def action_session_scope() -> Iterator[dict[str, Any]]:
+    """Share one HTTP session across all parameter sets in one SDK app run."""
+    scope: dict[str, Any] = {"session": requests.Session(), "client": None}
+    token = _ACTION_SESSION_SCOPE.set(scope)
+    try:
+        yield scope
+    finally:
+        _ACTION_SESSION_SCOPE.reset(token)
+        scope["session"].close()
 
 
 class InfobloxApiError(Exception):
@@ -61,7 +81,7 @@ class ApiResponse:
 def exception_message(error: Exception) -> str:
     """Match the legacy connector's exception-to-message formatting."""
     error_code: Any = None
-    error_message: Any = "Error message unavailable. Please check the asset configuration and|or the action parameters."
+    error_message: Any = INFOBLOX_ERROR_MESSAGE_UNAVAILABLE
     if hasattr(error, "args"):
         if len(error.args) > 1:
             error_code, error_message = error.args[0], error.args[1]
@@ -76,10 +96,20 @@ class InfobloxClient:
     """Thin requests wrapper preserving the legacy WAPI transport contract."""
 
     def __init__(self, asset: Any, session: requests.Session | None = None) -> None:
-        self.base_url = f"{asset.url.rstrip('/')}{WAPI_BASE}"
+        self.base_url = f"{asset.url.rstrip('/')}{INFOBLOX_BASE_ENDPOINT}"
         self.auth = (asset.username, asset.password)
         self.verify_ssl = asset.verify_server_cert if asset.verify_server_cert is not None else True
-        self.session = session or requests.Session()
+        scope = _ACTION_SESSION_SCOPE.get()
+        self._managed_by_action_scope = session is None and scope is not None
+        if session is not None:
+            self.session = session
+        elif scope is not None:
+            self.session = scope["session"]
+        else:
+            self.session = requests.Session()
+        if self._managed_by_action_scope:
+            assert scope is not None
+            scope["client"] = self
 
     def request(
         self,
@@ -108,37 +138,37 @@ class InfobloxClient:
         try:
             response = request_func(f"{self.base_url}{endpoint}", **request_kwargs)
         except Exception as error:
-            raise InfobloxApiError(f"Connection failed. {exception_message(error)}") from error
+            raise InfobloxApiError(f"{INFOBLOX_ERROR_SERVER_CONNECTION}. {exception_message(error)}") from error
 
         if allow_not_found and response.status_code == 404:
             try:
                 response_json = response.json()
             except Exception:
                 response_json = None
-            response_data: dict[str, Any] = {"resource_not_found": True}
+            response_data: dict[str, Any] = {INFOBLOX_RESOURCE_NOT_FOUND: True}
             if isinstance(response_json, dict):
-                response_data["error_message"] = response_json.get("text")
+                response_data[INFOBLOX_JSON_ERROR_MESSAGE] = response_json.get(INFOBLOX_JSON_TEXT)
             return ApiResponse(
                 status_code=response.status_code,
                 data=response_data,
-                content_type=response.headers.get("Content-Type", ""),
+                content_type=response.headers.get(INFOBLOX_JSON_CONTENT_TYPE, ""),
             )
 
-        if response.status_code in ERROR_MESSAGES:
-            message = ERROR_MESSAGES[response.status_code]
+        if response.status_code in INFOBLOX_REST_RESPONSE_MESSAGES:
+            message = INFOBLOX_REST_RESPONSE_MESSAGES[response.status_code]
             try:
                 response_json = response.json()
                 if isinstance(response_json, dict):
-                    message = response_json.get("text", message)
+                    message = response_json.get(INFOBLOX_JSON_TEXT, message)
             except Exception:
                 pass
-            raise InfobloxApiError(f"API failed\nStatus code: {response.status_code}\nDetail: {message}")
+            raise InfobloxApiError(INFOBLOX_ERROR_FROM_SERVER.format(status=response.status_code, detail=message))
 
         try:
-            content_type = response.headers["Content-Type"]
+            content_type = response.headers[INFOBLOX_JSON_CONTENT_TYPE]
             response_data = response.json() if "json" in content_type else None
         except Exception as error:
-            parse_message = f"Unable to parse the fields parameter into a dictionary.\nResponse text - {response.text}"
+            parse_message = INFOBLOX_ERROR_JSON_PARSE.format(raw_text=response.text)
             raise InfobloxApiError(f"{parse_message}. {exception_message(error)}") from error
 
         if response.status_code in (200, 201):
@@ -148,7 +178,7 @@ class InfobloxClient:
                 content_type=content_type,
             )
 
-        raise InfobloxApiError(f"API failed\nStatus code: {response.status_code}\nDetail: Unknown error occurred")
+        raise InfobloxApiError(INFOBLOX_ERROR_FROM_SERVER.format(status=response.status_code, detail=INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE))
 
     def paged_request(
         self,
@@ -162,9 +192,9 @@ class InfobloxClient:
         first_page_params = dict(params or {})
         first_page_params.update(
             {
-                PAGING: 1,
-                RETURN_AS_OBJECT: 1,
-                MAX_RESULTS: PAGE_SIZE,
+                INFOBLOX_JSON_PAGING: 1,
+                INFOBLOX_JSON_RETURN_AS_OBJECT: 1,
+                INFOBLOX_JSON_MAX_RESULTS: INFOBLOX_PAGE_SIZE,
             }
         )
         response = self.request(
@@ -173,26 +203,26 @@ class InfobloxClient:
             method=method,
             allow_not_found=allow_not_found,
         )
-        if response.data.get("resource_not_found"):
+        if response.data.get(INFOBLOX_RESOURCE_NOT_FOUND):
             return response.data
 
         page_data = response.data
-        combined_results = page_data.get("result", [])
-        next_page_id = page_data.get("next_page_id")
+        combined_results = page_data.get(INFOBLOX_JSON_RESULT, [])
+        next_page_id = page_data.get(INFOBLOX_JSON_NEXT_PAGE_ID)
         page_params: dict[str, Any] = {
-            PAGE_ID: next_page_id,
-            PAGING: 1,
-            RETURN_AS_OBJECT: 1,
+            INFOBLOX_JSON_PAGE_ID: next_page_id,
+            INFOBLOX_JSON_PAGING: 1,
+            INFOBLOX_JSON_RETURN_AS_OBJECT: 1,
         }
         seen_page_ids: set[Any] = set()
         page_count = 1
 
-        while page_params.get(PAGE_ID) is not None:
-            page_id = page_params[PAGE_ID]
-            if page_count >= MAX_PAGE_COUNT:
-                raise InfobloxApiError(f"Stopped pagination after the maximum of {MAX_PAGE_COUNT} pages")
+        while page_params.get(INFOBLOX_JSON_PAGE_ID) is not None:
+            page_id = page_params[INFOBLOX_JSON_PAGE_ID]
+            if page_count >= INFOBLOX_MAX_PAGE_COUNT:
+                raise InfobloxApiError(INFOBLOX_PAGINATION_MAX_ERROR_FORMAT.format(max_pages=INFOBLOX_MAX_PAGE_COUNT))
             if page_id in seen_page_ids:
-                raise InfobloxApiError("Stopped pagination because the server repeated next_page_id")
+                raise InfobloxApiError(INFOBLOX_PAGINATION_REPEAT_ERROR)
             seen_page_ids.add(page_id)
             page_count += 1
             response = self.request(
@@ -201,11 +231,11 @@ class InfobloxClient:
                 method=method,
                 allow_not_found=allow_not_found,
             )
-            if response.data.get("resource_not_found"):
+            if response.data.get(INFOBLOX_RESOURCE_NOT_FOUND):
                 break
             page_data = response.data
-            combined_results.extend(page_data.get("result", []))
-            page_params[PAGE_ID] = page_data.get("next_page_id")
+            combined_results.extend(page_data.get(INFOBLOX_JSON_RESULT, []))
+            page_params[INFOBLOX_JSON_PAGE_ID] = page_data.get(INFOBLOX_JSON_NEXT_PAGE_ID)
 
         return combined_results
 
@@ -216,15 +246,17 @@ class InfobloxClient:
         allow_not_found: bool = False,
     ) -> list[dict[str, Any]] | dict[str, Any]:
         params = dict(filters or {})
-        params[RETURN_FIELDS] = RPZ_FIELDS
-        return self.paged_request("/zone_rp", params=params, method="get", allow_not_found=allow_not_found)
+        params[INFOBLOX_JSON_RETURN_FIELDS] = INFOBLOX_LIST_RP_ZONE_PARAMS
+        return self.paged_request(INFOBLOX_RP_ZONE_DETAILS_ENDPOINT, params=params, method="get", allow_not_found=allow_not_found)
 
     def use_session_cookie(self) -> None:
         """Retain the legacy ibapauth header used by RPZ create/delete calls."""
         self.session.headers.update({"ibapauth": self.session.cookies["ibapauth"]})
 
     def logout(self) -> None:
-        self.request("/logout", method="post")
+        self.request(INFOBLOX_LOGOUT, method="post")
 
     def close(self) -> None:
-        self.session.close()
+        # The enclosing action scope owns and closes its shared session once.
+        if not self._managed_by_action_scope:
+            self.session.close()

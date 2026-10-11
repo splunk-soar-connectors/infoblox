@@ -27,11 +27,18 @@ from ..infoblox_client import InfobloxApiError, InfobloxClient, exception_messag
 
 
 logger = getLogger()
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-HOST_INFO_UNAVAILABLE = "The host might not be available or could be using statically configured IP and belongs to non-default network view"
-RPZ_POLICY_REQUIRED = "Policy rule of the Response Policy Zone must be 'GIVEN'.\nFound: '{}'"
-RPZ_NOT_FOUND = "Response Policy Zone with FQDN: '{}' does not exist"
-RPZ_RULE_VALIDATION_MESSAGE = "Validating Response Policy Zone name and RPZ rule name"
+
+
+class LegacyStringSummary(ActionOutput):
+    """Legacy RPZ mutation actions exposed the empty summary as a string path."""
+
+    @classmethod
+    def _to_json_schema(
+        cls,
+        parent_datapath: str = "action_result.summary",
+        column_order_counter: Any = None,
+    ):
+        yield {"data_path": parent_datapath, "data_type": "string"}
 
 
 def _is_ipv6(value: str) -> bool:
@@ -117,16 +124,14 @@ def _run_action(
             "summary": {},
         }
 
-    try:
-        client.logout()
-    except InfobloxApiError as error:
-        if outcome.get("success", True):
-            outcome = {
-                **outcome,
-                "success": False,
-                "message": str(error),
-            }
-    finally:
-        client.close()
+    if not client._managed_by_action_scope:
+        try:
+            client.logout()
+        except InfobloxApiError as error:
+            # Direct action calls have no enclosing manager lifecycle. Keep
+            # the individual result intact if their cleanup request fails.
+            logger.warning("Infoblox logout failed after action completion: %s", error)
+        finally:
+            client.close()
 
     return _action_result(params, soar, summary_type, **outcome)

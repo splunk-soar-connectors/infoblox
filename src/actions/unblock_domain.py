@@ -16,12 +16,44 @@
 from typing import Any
 
 from soar_sdk.abstract import SOARClient
+from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.params import Param, Params
 
 from ..asset import Asset
+from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import _run_action
-from ._models import DomainRpzParams, LegacyStringSummary
+from ._common import LegacyStringSummary, _run_action
 from ._rpz import _domain_rule_action
+
+
+class DomainRpzParams(Params):
+    domain: str = Param(
+        description="Domain to unblock",
+        required=True,
+        primary=True,
+        cef_types=["domain", "url"],
+        column_name="Domain",
+    )
+    rp_zone: str = Param(
+        description="FQDN of response policy zone",
+        required=True,
+        primary=True,
+        cef_types=["infoblox rpz"],
+        column_name="Response Policy Zone",
+    )
+    network_view: str | None = Param(
+        description="Network view",
+        default=INFOBLOX_NETWORK_VIEW_DEFAULT,
+        primary=True,
+        cef_types=["infoblox view"],
+        column_name="Network View",
+    )
+
+
+class DomainOutput(ActionOutput):
+    reference_link: str | None = OutputField(
+        example_values=["record:rpz:cname/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:www.test.abc.test_zone/default"]
+    )
 
 
 def _unblock_domain_handler(client: InfobloxClient, params: DomainRpzParams) -> dict[str, Any]:

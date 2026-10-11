@@ -24,19 +24,17 @@ from soar_sdk.action_results import ActionResult
 from soar_sdk.params import MakeRequestParams
 
 from src.actions import _common as action_common
-from src.actions._common import DATE_FORMAT, HOST_INFO_UNAVAILABLE
-from src.actions._models import (
-    BlockDomainParams,
-    BlockIpParams,
-    DomainRpzParams,
-    GetNetworkInfoParams,
-    GetSystemInfoParams,
-    IpRpzParams,
-    ListHostsParams,
-    ListNetworkViewParams,
-    ListRpzParams,
-)
+from src.actions.block_domain import BlockDomainParams
+from src.actions.block_ip import BlockIpParams
+from src.actions.get_network_info import GetNetworkInfoParams
+from src.actions.get_system_info import GetSystemInfoParams
+from src.actions.list_hosts import ListHostsParams
+from src.actions.list_network_view import ListNetworkViewParams
+from src.actions.list_rpz import ListRpzParams
+from src.actions.unblock_domain import DomainRpzParams
+from src.actions.unblock_ip import IpRpzParams
 from src.asset import Asset
+from src.consts import INFOBLOX_HOST_INFO_UNAVAILABLE, INFOBLOX_JSON_DATE_FORMAT
 from src.infoblox_client import InfobloxApiError
 
 
@@ -362,7 +360,7 @@ def test_get_system_info_preserves_types_and_has_no_time_filter(monkeypatch):
     assert data["optional_value"] is None
     assert data["opaque"] == {"count": 2}
     for key, timestamp in expected_times.items():
-        assert data[key] == time.strftime(DATE_FORMAT, time.localtime(timestamp))
+        assert data[key] == time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(timestamp))
     assert result.get_summary() == {
         "mac_address": "00:11:22:33:44:55",
         "binding_state": "ACTIVE",
@@ -444,7 +442,7 @@ def test_get_system_info_static_host_and_empty_result_messages(monkeypatch):
     assert sdk.app.actions_manager.get_action("get_system_info")(params, soar=empty_soar, asset=make_asset()) is True
     empty_result = sdk.app.actions_manager.get_results()[before]
     assert empty_result.get_data() == []
-    assert empty_result.get_message() == HOST_INFO_UNAVAILABLE
+    assert empty_result.get_message() == INFOBLOX_HOST_INFO_UNAVAILABLE
     assert empty_result.get_summary() == {}
 
 
@@ -468,7 +466,7 @@ def test_get_system_info_preserves_explicitly_empty_network_view(monkeypatch):
         is True
     )
     result = sdk.app.actions_manager.get_results()[before]
-    assert result.get_message() == HOST_INFO_UNAVAILABLE
+    assert result.get_message() == INFOBLOX_HOST_INFO_UNAVAILABLE
     assert client.requests == [
         (
             "request",
@@ -745,7 +743,7 @@ def test_list_rpz_empty_and_not_found_paths_keep_legacy_messages(monkeypatch):
     assert timestamp_result.get_data() == [
         {
             "fqdn": "block.example",
-            "rpz_last_updated_time": time.strftime(DATE_FORMAT, time.localtime(timestamp)),
+            "rpz_last_updated_time": time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(timestamp)),
         }
     ]
     assert timestamp_result.get_summary() == {"total_response_policy_zones": 1}

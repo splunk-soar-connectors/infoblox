@@ -15,13 +15,53 @@
 
 from typing import Any
 
+from pydantic import field_validator
 from soar_sdk.abstract import SOARClient
+from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.params import Param, Params
 
 from ..asset import Asset
+from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import _run_action
-from ._models import IpRpzParams, LegacyStringSummary
+from ._common import LegacyStringSummary, _is_ip, _run_action
 from ._rpz import _ip_rule_action
+
+
+class IpRpzParams(Params):
+    ip: str = Param(
+        description="IP/CIDR to unblock",
+        required=True,
+        primary=True,
+        cef_types=["ip"],
+        column_name="IP",
+    )
+    rp_zone: str = Param(
+        description="FQDN of response policy zone",
+        required=True,
+        primary=True,
+        cef_types=["infoblox rpz"],
+        column_name="Response Policy Zone",
+    )
+    network_view: str | None = Param(
+        description="Network view",
+        default=INFOBLOX_NETWORK_VIEW_DEFAULT,
+        primary=True,
+        cef_types=["infoblox view"],
+        column_name="Network View",
+    )
+
+    @field_validator("ip")
+    @classmethod
+    def validate_ip(cls, value: str) -> str:
+        if not _is_ip(value):
+            raise ValueError("parameter 'ip' validation failed")
+        return value
+
+
+class BlockIpOutput(ActionOutput):
+    reference_link: str | None = OutputField(
+        example_values=["record:rpz:cname:ipaddress/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5.test_zone/default"]
+    )
 
 
 def _unblock_ip_handler(client: InfobloxClient, params: IpRpzParams) -> dict[str, Any]:

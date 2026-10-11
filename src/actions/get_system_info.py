@@ -17,71 +17,170 @@ import time
 from typing import Any
 
 from soar_sdk.abstract import SOARClient
+from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.params import Param, Params
 
 from ..asset import Asset
-from ..infoblox_client import DEFAULT_NETWORK_VIEW, InfobloxClient
-from ._common import DATE_FORMAT, HOST_INFO_UNAVAILABLE, _is_address, _is_ipv6, _run_action
-from ._models import GetSystemInfoParams, GetSystemInfoSummary
+from ..consts import (
+    INFOBLOX_HOST_INFO_UNAVAILABLE,
+    INFOBLOX_JSON_A_IP,
+    INFOBLOX_JSON_AAAA_IP,
+    INFOBLOX_JSON_ADDRESS,
+    INFOBLOX_JSON_BINDING_STATE,
+    INFOBLOX_JSON_CLIENT_HOSTNAME,
+    INFOBLOX_JSON_CLTT,
+    INFOBLOX_JSON_CONTEXT_NAME_SEARCH,
+    INFOBLOX_JSON_DATE_FORMAT,
+    INFOBLOX_JSON_DISCOVERED_DATA,
+    INFOBLOX_JSON_ENDS,
+    INFOBLOX_JSON_HARDWARE,
+    INFOBLOX_JSON_IS_STATIC_IP,
+    INFOBLOX_JSON_MAC_ADDRESS,
+    INFOBLOX_JSON_NETWORK_VIEW,
+    INFOBLOX_JSON_NEVER_ENDS,
+    INFOBLOX_JSON_OS,
+    INFOBLOX_JSON_PROTOCOL,
+    INFOBLOX_JSON_RECORD_NAME,
+    INFOBLOX_JSON_RETURN_FIELDS,
+    INFOBLOX_JSON_STARTS,
+    INFOBLOX_LEASE,
+    INFOBLOX_LEASE_RETURN_FIELDS,
+    INFOBLOX_NETWORK_VIEW_DEFAULT,
+    INFOBLOX_PARAM_VIEW,
+    INFOBLOX_PARAM_ZONE,
+    INFOBLOX_PROTOCOL_IPV4,
+    INFOBLOX_PROTOCOL_IPV6,
+    INFOBLOX_RECORD_A_RETURN_FIELDS,
+    INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
+    INFOBLOX_RECORDS_IPv4_ENDPOINT,
+    INFOBLOX_RECORDS_IPv6_ENDPOINT,
+)
+from ..infoblox_client import InfobloxClient
+from ._common import _is_address, _is_ipv6, _run_action
+
+
+class GetSystemInfoParams(Params):
+    ip_hostname: str = Param(
+        description="IP/Hostname",
+        required=True,
+        primary=True,
+        cef_types=["ip", "host name"],
+    )
+    network_view: str | None = Param(
+        description="Network view",
+        default=INFOBLOX_NETWORK_VIEW_DEFAULT,
+        primary=True,
+        cef_types=["infoblox view"],
+        column_name="Network View",
+    )
+
+
+class GetSystemInfoOutput(ActionOutput):
+    # Declare table fields in legacy column order. Other raw WAPI fields follow.
+    address: str | None = OutputField(cef_types=["ip"], example_values=["10.0.0.5"], column_name="Host IP")
+    client_hostname: str | None = OutputField(cef_types=["host name"], column_name="Client Host Name")
+    server_host_name: str | None = OutputField(
+        cef_types=["host name"],
+        example_values=["test-01.lab.test.local"],
+        column_name="Server Host Name",
+    )
+    os: str | None = OutputField(example_values=["Linux"], column_name="OS")
+    binding_state: str | None = OutputField(example_values=["FREE"], column_name="Binding State")
+    starts: str | None = OutputField(example_values=["2010-10-10 10:11:12"], column_name="Starts")
+    ends: str | None = OutputField(example_values=["2010-10-10 12:11:12"], column_name="Ends")
+    cltt: str | None = OutputField(
+        example_values=["2010-10-10 10:11:12"],
+        column_name="Client Last Transaction Time",
+    )
+    network: str | None = OutputField(column_name="Network")
+    ref: str | None = OutputField(
+        alias="_ref",
+        example_values=["lease/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5/default"],
+    )
+    billing_class: str | None = None
+    hardware: str | None = OutputField(cef_types=["mac address"], example_values=["0a:10:10:a0:a0:10"])
+    ipv6_duid: str | None = None
+    ipv6_iaid: str | None = None
+    ipv6_preferred_lifetime: float | None = OutputField(example_values=[604800])
+    ipv6_prefix_bits: float | None = OutputField(example_values=[48])
+    is_invalid_mac: bool | None = None
+    network_view: str | None = OutputField(cef_types=["infoblox view"], example_values=["default"])
+    never_ends: bool | None = None
+    never_starts: bool | None = None
+    next_binding_state: str | None = OutputField(example_values=["ACTIVE"])
+    on_commit: str | None = None
+    on_expiry: str | None = None
+    on_release: str | None = None
+    option: str | None = None
+    protocol: str | None = OutputField(example_values=["IPV4"])
+    remote_id: str | None = None
+    served_by: str | None = OutputField(cef_types=["ip"], example_values=["10.0.0.7"], column_name="Served By")
+    tsfp: str | None = OutputField(example_values=["1504274705"])
+    tstp: str | None = OutputField(example_values=["1504274905"])
+    uid: str | None = None
+    username: str | None = None
+    variable: str | None = OutputField(example_values=['lt="undefined"'])
+
+
+class GetSystemInfoSummary(ActionOutput):
+    binding_state: str | None = None
+    is_static_ip: bool | None = OutputField(example_values=[True, False])
+    mac_address: str | None = OutputField(cef_types=["mac address"], example_values=["0a:10:10:a0:a0:10"])
+    never_ends: bool | None = OutputField(example_values=[True, False])
 
 
 def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams) -> dict[str, Any]:
     hostname = params.ip_hostname
-    network_view = params.network_view if params.network_view is not None else DEFAULT_NETWORK_VIEW
-    lease_query: dict[str, Any] = {
-        "_return_fields": (
-            "binding_state,starts,ends,address,billing_class,client_hostname,tsfp,tstp,uid,"
-            "remote_id,username,variable,cltt,hardware,network,network_view,option,protocol,"
-            "served_by,server_host_name,billing_class,ipv6_duid,ipv6_iaid,ipv6_preferred_lifetime,"
-            "ipv6_prefix_bits,is_invalid_mac,never_ends,never_starts,next_binding_state,on_commit,"
-            "on_expiry,on_release"
-        )
-    }
+    # Params already supplies the legacy default when the input is omitted.
+    # Keep an explicitly supplied None intact, as the legacy connector did.
+    network_view = params.network_view
+    lease_query: dict[str, Any] = {INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_LEASE_RETURN_FIELDS}
     if _is_address(hostname) or _is_ipv6(hostname):
-        lease_query["address"] = hostname
+        lease_query[INFOBLOX_JSON_ADDRESS] = hostname
     else:
-        lease_query["client_hostname"] = hostname
-    lease_query["network_view"] = network_view
-    lease_response = client.request("/lease", params=lease_query, method="get").data
+        lease_query[INFOBLOX_JSON_CLIENT_HOSTNAME] = hostname
+    lease_query[INFOBLOX_JSON_NETWORK_VIEW] = network_view
+    lease_response = client.request(INFOBLOX_LEASE, params=lease_query, method="get").data
     lease_rows = lease_response or []
 
     host_rows: list[dict[str, Any]] | None = None
-    if network_view == DEFAULT_NETWORK_VIEW:
+    if network_view == INFOBLOX_NETWORK_VIEW_DEFAULT:
         is_ipv4 = _is_address(hostname) and ":" not in hostname
         is_ipv6 = _is_ipv6(hostname)
         if is_ipv4:
-            host_endpoint = "/record:a"
+            host_endpoint = INFOBLOX_RECORDS_IPv4_ENDPOINT
             host_query = {
-                "_return_fields": "ipv4addr,name,view,zone,discovered_data",
-                "ipv4addr": hostname,
-                "view": DEFAULT_NETWORK_VIEW,
+                INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_A_RETURN_FIELDS,
+                INFOBLOX_JSON_A_IP: hostname,
+                INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
         elif is_ipv6:
-            host_endpoint = "/record:aaaa"
+            host_endpoint = INFOBLOX_RECORDS_IPv6_ENDPOINT
             host_query = {
-                "_return_fields": "ipv6addr,name,view,zone,discovered_data",
-                "ipv6addr": hostname,
-                "view": DEFAULT_NETWORK_VIEW,
+                INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
+                INFOBLOX_JSON_AAAA_IP: hostname,
+                INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
         else:
-            host_endpoint = "/record:a"
+            host_endpoint = INFOBLOX_RECORDS_IPv4_ENDPOINT
             host_query = {
-                "_return_fields": "ipv4addr,name,view,zone,discovered_data",
-                "name~": hostname,
-                "view": DEFAULT_NETWORK_VIEW,
+                INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_A_RETURN_FIELDS,
+                INFOBLOX_JSON_CONTEXT_NAME_SEARCH: hostname,
+                INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
         host_rows = client.request(host_endpoint, params=host_query, method="get").data
         if not is_ipv4 and not is_ipv6 and not host_rows:
             host_query = {
-                "_return_fields": "ipv6addr,name,view,zone,discovered_data",
-                "name~": hostname,
-                "view": DEFAULT_NETWORK_VIEW,
+                INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
+                INFOBLOX_JSON_CONTEXT_NAME_SEARCH: hostname,
+                INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
-            host_rows = client.request("/record:aaaa", params=host_query, method="get").data
+            host_rows = client.request(INFOBLOX_RECORDS_IPv6_ENDPOINT, params=host_query, method="get").data
 
     if not lease_rows and not host_rows:
         return {
             "success": True,
-            "message": HOST_INFO_UNAVAILABLE,
+            "message": INFOBLOX_HOST_INFO_UNAVAILABLE,
             "data": [],
             "summary": {},
         }
@@ -90,43 +189,49 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
     summary: dict[str, Any] = {}
     if not lease_rows and host_rows:
         for host in host_rows:
-            name = host["name"]
-            zone_suffix = f".{host['zone']}"
+            name = host[INFOBLOX_JSON_RECORD_NAME]
+            zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
             if name.endswith(zone_suffix):
                 name = name[: -len(zone_suffix)]
             if not (_is_address(hostname) or _is_ipv6(hostname)) and name != hostname:
                 continue
-            discovered = host.get("discovered_data") or {}
+            # Match legacy get(..., {}) semantics: a missing field is empty,
+            # while an explicitly malformed None value still raises on .get.
+            discovered = host.get(INFOBLOX_JSON_DISCOVERED_DATA, {})
             item: dict[str, Any] = {
-                "client_hostname": name,
-                "hardware": discovered.get("mac_address"),
-                "os": discovered.get("os"),
-                "address": host.get("ipv4addr", host.get("ipv6addr")),
+                INFOBLOX_JSON_CLIENT_HOSTNAME: name,
+                INFOBLOX_JSON_HARDWARE: discovered.get(INFOBLOX_JSON_MAC_ADDRESS),
+                INFOBLOX_JSON_OS: discovered.get(INFOBLOX_JSON_OS),
+                INFOBLOX_JSON_ADDRESS: host.get(INFOBLOX_JSON_A_IP, host.get(INFOBLOX_JSON_AAAA_IP)),
             }
-            if host.get("ipv4addr"):
-                item["protocol"] = "IPV4"
-            elif host.get("ipv6addr"):
-                item["protocol"] = "IPV6"
-            summary["mac_address"] = item["hardware"]
-            summary["is_static_ip"] = True
+            if host.get(INFOBLOX_JSON_A_IP) and _is_address(host[INFOBLOX_JSON_A_IP]):
+                item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV4
+            elif host.get(INFOBLOX_JSON_AAAA_IP) and _is_address(host[INFOBLOX_JSON_AAAA_IP]):
+                item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV6
+            summary[INFOBLOX_JSON_MAC_ADDRESS] = item[INFOBLOX_JSON_HARDWARE]
+            summary[INFOBLOX_JSON_IS_STATIC_IP] = True
             data.append(item)
 
     for lease in lease_rows:
         if host_rows:
             matching_host = next(
-                (host for host in host_rows if host.get("ipv4addr") == lease["address"] or host.get("ipv6addr") == lease["address"]),
+                (
+                    host
+                    for host in host_rows
+                    if host[INFOBLOX_JSON_A_IP] == lease[INFOBLOX_JSON_ADDRESS] or host[INFOBLOX_JSON_AAAA_IP] == lease[INFOBLOX_JSON_ADDRESS]
+                ),
                 None,
             )
             if matching_host:
-                lease["os"] = (matching_host.get("discovered_data") or {}).get("os")
-        for time_key in ("cltt", "starts", "ends"):
-            lease[time_key] = time.strftime(DATE_FORMAT, time.localtime(lease[time_key]))
+                lease[INFOBLOX_JSON_OS] = matching_host.get(INFOBLOX_JSON_DISCOVERED_DATA, {}).get(INFOBLOX_JSON_OS)
+        for time_key in (INFOBLOX_JSON_CLTT, INFOBLOX_JSON_STARTS, INFOBLOX_JSON_ENDS):
+            lease[time_key] = time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(lease[time_key]))
         summary.update(
             {
-                "mac_address": lease["hardware"],
-                "binding_state": lease["binding_state"],
-                "never_ends": lease["never_ends"],
-                "is_static_ip": False,
+                INFOBLOX_JSON_MAC_ADDRESS: lease[INFOBLOX_JSON_HARDWARE],
+                INFOBLOX_JSON_BINDING_STATE: lease[INFOBLOX_JSON_BINDING_STATE],
+                INFOBLOX_JSON_NEVER_ENDS: lease[INFOBLOX_JSON_NEVER_ENDS],
+                INFOBLOX_JSON_IS_STATIC_IP: False,
             }
         )
         data.append(lease)
@@ -134,7 +239,7 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
     if not data:
         return {
             "success": True,
-            "message": HOST_INFO_UNAVAILABLE,
+            "message": INFOBLOX_HOST_INFO_UNAVAILABLE,
             "data": [],
             "summary": summary,
         }
