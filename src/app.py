@@ -24,7 +24,7 @@ from .actions import register_actions
 from .actions._common import _is_ip
 from .actions.connectivity import _test_connectivity_handler
 from .asset import Asset
-from .infoblox_client import InfobloxApiError, InfobloxClient, action_session_scope, exception_message
+from .infoblox_client import InfobloxApiError, InfobloxClient, exception_message
 from .legacy_metadata import apply_legacy_output_metadata
 
 
@@ -49,23 +49,6 @@ class LegacyActionAliasManager(ActionsManager):
     def get_action(self, identifier: str):
         """Resolve legacy playbook action identifiers without manifest duplicates."""
         return super().get_action(self._action_aliases.get(identifier, identifier))
-
-    def _handle_action(self, in_json: str, handle: int) -> str:
-        """Mirror legacy initialize/handle/finalize session handling."""
-        with action_session_scope() as scope:
-            try:
-                return super()._handle_action(in_json, handle)
-            finally:
-                client = scope.get("client")
-                if client is not None:
-                    try:
-                        client.logout()
-                    except InfobloxApiError as error:
-                        # Legacy finalize reports cleanup failure at the run
-                        # level without replacing already completed action results.
-                        logger.warning("Infoblox logout failed after action run: %s", error)
-                        self.add_exception(error)
-
 
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
     """Check the Infoblox WAPI connection using the configured asset."""

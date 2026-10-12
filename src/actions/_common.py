@@ -124,14 +124,16 @@ def _run_action(
             "summary": {},
         }
 
-    if not client._managed_by_action_scope:
-        try:
-            client.logout()
-        except InfobloxApiError as error:
-            # Direct action calls have no enclosing manager lifecycle. Keep
-            # the individual result intact if their cleanup request fails.
-            logger.warning("Infoblox logout failed after action completion: %s", error)
-        finally:
-            client.close()
+    try:
+        client.logout()
+    except InfobloxApiError as error:
+        if outcome.get("success", True):
+            outcome = {
+                **outcome,
+                "success": False,
+                "message": str(error),
+            }
+    finally:
+        client.close()
 
     return _action_result(params, soar, summary_type, **outcome)

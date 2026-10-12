@@ -15,9 +15,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
-from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
@@ -52,21 +49,6 @@ from .consts import (
 )
 
 
-_ACTION_SESSION_SCOPE: ContextVar[dict[str, Any] | None] = ContextVar("infoblox_action_session_scope", default=None)
-
-
-@contextmanager
-def action_session_scope() -> Iterator[dict[str, Any]]:
-    """Share one HTTP session across all parameter sets in one SDK app run."""
-    scope: dict[str, Any] = {"session": requests.Session(), "client": None}
-    token = _ACTION_SESSION_SCOPE.set(scope)
-    try:
-        yield scope
-    finally:
-        _ACTION_SESSION_SCOPE.reset(token)
-        scope["session"].close()
-
-
 class InfobloxApiError(Exception):
     """An API or transport failure formatted for legacy action messages."""
 
@@ -99,17 +81,7 @@ class InfobloxClient:
         self.base_url = f"{asset.url.rstrip('/')}{INFOBLOX_BASE_ENDPOINT}"
         self.auth = (asset.username, asset.password)
         self.verify_ssl = asset.verify_server_cert if asset.verify_server_cert is not None else True
-        scope = _ACTION_SESSION_SCOPE.get()
-        self._managed_by_action_scope = session is None and scope is not None
-        if session is not None:
-            self.session = session
-        elif scope is not None:
-            self.session = scope["session"]
-        else:
-            self.session = requests.Session()
-        if self._managed_by_action_scope:
-            assert scope is not None
-            scope["client"] = self
+        self.session = session or requests.Session()
 
     def request(
         self,
@@ -257,6 +229,4 @@ class InfobloxClient:
         self.request(INFOBLOX_LOGOUT, method="post")
 
     def close(self) -> None:
-        # The enclosing action scope owns and closes its shared session once.
-        if not self._managed_by_action_scope:
-            self.session.close()
+        self.session.close()
