@@ -22,7 +22,7 @@ from soar_sdk.action_results import ActionOutput, OutputField
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
-from ..consts import INFOBLOX_JSON_NETWORK_VIEW, INFOBLOX_NETWORK_ENDPOINT
+from ..consts import INFOBLOX_JSON_NETWORK, INFOBLOX_JSON_NETWORK_VIEW, INFOBLOX_NETWORK_ENDPOINT
 from ..infoblox_client import InfobloxClient
 from ._common import _is_ip, _run_action
 
@@ -79,7 +79,7 @@ def _get_network_info_handler(client: InfobloxClient, params: GetNetworkInfoPara
     # validator, which replaces the connector's global set_validator("ip", ...).
     if params.ip and _is_ip(params.ip):
         if "/" in params.ip:
-            query["network"] = params.ip
+            query[INFOBLOX_JSON_NETWORK] = params.ip
         else:
             search_ip = params.ip
     if params.network_view:

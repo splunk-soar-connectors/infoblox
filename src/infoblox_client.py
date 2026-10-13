@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import requests
+from soar_sdk.logging import getLogger
 
 from .consts import (
     INFOBLOX_BASE_ENDPOINT,
@@ -39,6 +40,7 @@ from .consts import (
     INFOBLOX_LIST_RP_ZONE_PARAMS,
     INFOBLOX_LOGOUT,
     INFOBLOX_MAX_PAGE_COUNT,
+    INFOBLOX_PAGE_COUNT,
     INFOBLOX_PAGE_SIZE,
     INFOBLOX_PAGINATION_MAX_ERROR_FORMAT,
     INFOBLOX_PAGINATION_REPEAT_ERROR,
@@ -47,6 +49,9 @@ from .consts import (
     INFOBLOX_REST_RESPONSE_MESSAGES,
     INFOBLOX_RP_ZONE_DETAILS_ENDPOINT,
 )
+
+
+logger = getLogger()
 
 
 class InfobloxApiError(Exception):
@@ -161,6 +166,8 @@ class InfobloxClient:
         allow_not_found: bool = False,
     ) -> list[dict[str, Any]] | dict[str, Any]:
         """Fetch WAPI pages while protecting against a repeated page token."""
+        page_count = 1
+        logger.debug(INFOBLOX_PAGE_COUNT.format(page_count))
         first_page_params = dict(params or {})
         first_page_params.update(
             {
@@ -187,7 +194,6 @@ class InfobloxClient:
             INFOBLOX_JSON_RETURN_AS_OBJECT: 1,
         }
         seen_page_ids: set[Any] = set()
-        page_count = 1
 
         while page_params.get(INFOBLOX_JSON_PAGE_ID) is not None:
             page_id = page_params[INFOBLOX_JSON_PAGE_ID]
@@ -197,6 +203,7 @@ class InfobloxClient:
                 raise InfobloxApiError(INFOBLOX_PAGINATION_REPEAT_ERROR)
             seen_page_ids.add(page_id)
             page_count += 1
+            logger.debug(INFOBLOX_PAGE_COUNT.format(page_count))
             response = self.request(
                 endpoint,
                 params=page_params,

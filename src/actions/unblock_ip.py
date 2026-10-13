@@ -23,7 +23,7 @@ from soar_sdk.params import Param, Params
 from ..asset import Asset
 from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import LegacyStringSummary, _is_ip, _run_action
+from ._common import _is_ip, _run_action
 from ._rpz import _ip_rule_action
 
 
@@ -69,4 +69,4 @@ def _unblock_ip_handler(client: InfobloxClient, params: IpRpzParams) -> dict[str
 
 
 def unblock_ip(params: IpRpzParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, LegacyStringSummary, _unblock_ip_handler)
+    return _run_action(params, asset, soar, ActionOutput, _unblock_ip_handler)

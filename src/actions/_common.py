@@ -23,22 +23,11 @@ from soar_sdk.logging import getLogger
 from soar_sdk.params import Params
 
 from ..asset import Asset
+from ..consts import INFOBLOX_IP_VALIDATION_FAILED
 from ..infoblox_client import InfobloxApiError, InfobloxClient, exception_message
 
 
 logger = getLogger()
-
-
-class LegacyStringSummary(ActionOutput):
-    """Legacy RPZ mutation actions exposed the empty summary as a string path."""
-
-    @classmethod
-    def _to_json_schema(
-        cls,
-        parent_datapath: str = "action_result.summary",
-        column_order_counter: Any = None,
-    ):
-        yield {"data_path": parent_datapath, "data_type": "string"}
 
 
 def _is_ipv6(value: str) -> bool:
@@ -57,11 +46,16 @@ def _is_ip(value: str) -> bool:
         else:
             address, prefix_size = value, 0
         parsed = ipaddress.ip_address(address)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as error:
+        logger.debug(f"{INFOBLOX_IP_VALIDATION_FAILED}. {exception_message(error)}")
         return False
     if ":" in address and not _is_ipv6(address):
+        logger.debug(INFOBLOX_IP_VALIDATION_FAILED)
         return False
-    return 0 <= prefix_size <= parsed.max_prefixlen
+    if not 0 <= prefix_size <= parsed.max_prefixlen:
+        logger.debug(INFOBLOX_IP_VALIDATION_FAILED)
+        return False
+    return True
 
 
 def _is_address(value: str) -> bool:

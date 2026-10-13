@@ -16,6 +16,7 @@
 from typing import Any
 from urllib.parse import urlsplit
 
+from soar_sdk.logging import getLogger
 from soar_sdk.params import Params
 
 from ..consts import (
@@ -46,8 +47,12 @@ from ..consts import (
     INFOBLOX_RP_ZONE_NOT_EXISTS,
     INFOBLOX_RP_ZONE_POLICY_RULE_ERROR,
     INFOBLOX_RPZ_POLICY,
+    INFOBLOX_VALIDATE_MESSAGE,
 )
 from ..infoblox_client import InfobloxApiError, InfobloxClient, exception_message
+
+
+logger = getLogger()
 
 
 def _validate_rpz(client: InfobloxClient, rp_zone: str, network_view: str | None) -> list[dict[str, Any]]:
@@ -88,6 +93,7 @@ def _ip_rule_action(
     view = params.network_view
     rule_name = f"{ip_address.lower()}.{rp_zone}"
     endpoint = INFOBLOX_IP_ENDPOINT
+    logger.progress(INFOBLOX_VALIDATE_MESSAGE)
     _validate_rpz(client, rp_zone, view)
     client.use_session_cookie()
     query = {INFOBLOX_JSON_RECORD_NAME: rule_name, INFOBLOX_PARAM_ZONE: rp_zone, INFOBLOX_PARAM_VIEW: view}
@@ -147,6 +153,8 @@ def _domain_rule_action(
     view = params.network_view
     rule_name = f"{domain}.{rp_zone}"
     endpoint = INFOBLOX_DOMAIN_ENDPOINT
+    if block:
+        logger.progress(INFOBLOX_VALIDATE_MESSAGE)
     _validate_rpz(client, rp_zone, view)
     client.use_session_cookie()
     query = {INFOBLOX_JSON_RECORD_NAME: rule_name, INFOBLOX_PARAM_ZONE: rp_zone, INFOBLOX_PARAM_VIEW: view}

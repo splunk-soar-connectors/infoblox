@@ -22,7 +22,7 @@ from soar_sdk.params import Param, Params
 from ..asset import Asset
 from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import LegacyStringSummary, _run_action
+from ._common import _run_action
 from ._rpz import _domain_rule_action
 
 
@@ -79,4 +79,4 @@ def _block_domain_handler(client: InfobloxClient, params: BlockDomainParams) -> 
 
 
 def block_domain(params: BlockDomainParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, LegacyStringSummary, _block_domain_handler)
+    return _run_action(params, asset, soar, ActionOutput, _block_domain_handler)

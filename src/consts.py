@@ -13,20 +13,10 @@
 # limitations under the License.
 """Constants shared by the Infoblox app and its actions."""
 
-# Legacy action IDs retained as runtime aliases without duplicate manifest entries.
-INFOBLOX_LEGACY_ACTION_ALIASES = {"test_asset_connectivity": "test_connectivity"}
-
-# Asset configuration keys.
-INFOBLOX_CONFIG_URL = "url"
-INFOBLOX_CONFIG_USERNAME = "username"
-INFOBLOX_CONFIG_PASSWORD = "password"
-INFOBLOX_CONFIG_VERIFY_SERVER_CERT = "verify_server_cert"
-
 # Shared action behavior and messages.
 INFOBLOX_JSON_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 INFOBLOX_HOST_INFO_UNAVAILABLE = (
-    "The host might not be available or could be using statically configured IP "
-    "and belongs to non-default network view"
+    "The host might not be available or could be using statically configured IP and belongs to non-default network view"
 )
 INFOBLOX_RP_ZONE_POLICY_RULE_ERROR = "Policy rule of the Response Policy Zone must be 'GIVEN'.\nFound: '{rule_name}'"
 INFOBLOX_RP_ZONE_NOT_EXISTS = "Response Policy Zone with FQDN: '{fqdn_name}' does not exist"
@@ -38,7 +28,6 @@ INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE = "This action gets the data from default netw
 INFOBLOX_JSON_ADDRESS = "address"
 INFOBLOX_JSON_BINDING_STATE = "binding_state"
 INFOBLOX_PARAM_CANONICAL = "canonical"
-INFOBLOX_JSON_CLIENT_HOSTNAME = "client_hostname"
 INFOBLOX_JSON_COMMENT = "comment"
 INFOBLOX_JSON_DISCOVERED_DATA = "discovered_data"
 INFOBLOX_PARAM_FQDN = "fqdn"
@@ -66,7 +55,6 @@ INFOBLOX_JSON_CONTENT_TYPE = "Content-Type"
 INFOBLOX_JSON_NEXT_PAGE_ID = "next_page_id"
 INFOBLOX_RESOURCE_NOT_FOUND = "resource_not_found"
 INFOBLOX_JSON_RESULT = "result"
-INFOBLOX_RESPONSE_DATA = "response_data"
 INFOBLOX_JSON_TEXT = "text"
 INFOBLOX_TOTAL_HOSTS = "total_hosts"
 INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES = "total_response_policy_zones"
@@ -74,8 +62,6 @@ INFOBLOX_PARAM_VIEW = "view"
 INFOBLOX_PARAM_ZONE = "zone"
 INFOBLOX_JSON_SUCCESS = "success"
 INFOBLOX_JSON_MESSAGE = "message"
-INFOBLOX_JSON_DATA = "data"
-INFOBLOX_JSON_SUMMARY = "summary"
 INFOBLOX_JSON_REF = "_ref"
 
 INFOBLOX_DOMAIN_ALREADY_BLOCKED = "Domain already blocked"
@@ -83,33 +69,28 @@ INFOBLOX_DOMAIN_ALREADY_UNBLOCKED = "Domain already unblocked"
 INFOBLOX_BLOCK_DOMAIN_SUCCESS = "Domain blocked successfully"
 INFOBLOX_DOMAIN_UNBLOCK_SUCCESS = "Domain unblocked successfully"
 INFOBLOX_DOMAIN_EXISTS_NOT_IN_BLOCKED_STATE = (
-    "RPZ rule for specified domain already exists, But it is not of type "
-    "'Block Domain Name (No Such Domain) Rule'"
+    "RPZ rule for specified domain already exists, But it is not of type 'Block Domain Name (No Such Domain) Rule'"
 )
-INFOBLOX_DOMAIN_NOT_IN_BLOCKED_STATE = (
-    "RPZ rule for specified domain is not of type 'Block Domain Name (No Such Domain) Rule'"
-)
+INFOBLOX_DOMAIN_NOT_IN_BLOCKED_STATE = "RPZ rule for specified domain is not of type 'Block Domain Name (No Such Domain) Rule'"
 INFOBLOX_INVALID_DOMAIN_PARAMETER = "Please provide a valid 'domain' parameter. {}"
 INFOBLOX_IP_ALREADY_BLOCKED = "IP/CIDR already blocked"
 INFOBLOX_IP_ALREADY_UNBLOCKED = "IP/CIDR already unblocked"
 INFOBLOX_BLOCK_IP_SUCCESS = "IP/CIDR blocked successfully"
 INFOBLOX_IP_UNBLOCK_SUCCESS = "IP/CIDR unblocked successfully"
+INFOBLOX_IP_VALIDATION_FAILED = "parameter 'ip' validation failed"
 INFOBLOX_IP_EXISTS_NOT_IN_BLOCKED_STATE = (
-    "RPZ rule for specified IP already exists, But it is not of type "
-    "'Block IP Address (No Such Domain) Rule'"
+    "RPZ rule for specified IP already exists, But it is not of type 'Block IP Address (No Such Domain) Rule'"
 )
 INFOBLOX_IP_NOT_IN_BLOCKED_STATE = "RPZ rule for specified IP is not of type 'Block IP Address (No Such Domain) Rule'"
 INFOBLOX_ERROR_SERVER_CONNECTION = "Connection failed"
 INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE = "Unknown error occurred"
-INFOBLOX_ERROR_MESSAGE_UNAVAILABLE = (
-    "Error message unavailable. Please check the asset configuration and|or the action parameters."
-)
+INFOBLOX_ERROR_MESSAGE_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or the action parameters."
 INFOBLOX_ERROR_FROM_SERVER = "API failed\nStatus code: {status}\nDetail: {detail}"
 INFOBLOX_ERROR_JSON_PARSE = "Unable to parse the fields parameter into a dictionary.\nResponse text - {raw_text}"
 INFOBLOX_PAGINATION_MAX_ERROR_FORMAT = "Stopped pagination after the maximum of {max_pages} pages"
 INFOBLOX_PAGINATION_REPEAT_ERROR = "Stopped pagination because the server repeated next_page_id"
+INFOBLOX_PAGE_COUNT = "Making paged request... #{0}"
 
-INFOBLOX_TEST_CONNECTIVITY_MESSAGE = "Logging into device"
 INFOBLOX_TEST_CONN_FAILED = "Connectivity test failed"
 INFOBLOX_TEST_CONN_SUCCESS = "Connectivity test succeeded"
 INFOBLOX_TEST_ENDPOINT = "/?_schema"
@@ -178,6 +159,5 @@ INFOBLOX_REST_RESPONSE_MESSAGES = {
     INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR: INFOBLOX_REST_RESP_INTERNAL_SERVER_ERROR_MESSAGE,
 }
 INFOBLOX_LIST_RP_ZONE_PARAMS = (
-    "rpz_policy,fqdn,rpz_severity,disable,rpz_type,primary_type,ns_group,network_view,"
-    "rpz_priority,rpz_last_updated_time,comment,substitute_name"
+    "rpz_policy,fqdn,rpz_severity,disable,rpz_type,primary_type,ns_group,network_view,rpz_priority,rpz_last_updated_time,comment,substitute_name"
 )

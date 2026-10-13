@@ -13,9 +13,9 @@
 # limitations under the License.
 """Register Infoblox actions with the SOAR SDK application."""
 
+from soar_sdk.action_results import ActionOutput
 from soar_sdk.app import App
 
-from ._common import LegacyStringSummary
 from .block_domain import BlockDomainParams, DomainOutput as BlockDomainOutput, block_domain
 from .block_ip import BlockIpOutput, BlockIpParams, block_ip
 from .get_network_info import GetNetworkInfoOutput, GetNetworkInfoParams, GetNetworkInfoSummary, get_network_info
@@ -78,7 +78,7 @@ def register_actions(app: App) -> App:
         read_only=False,
         params_class=BlockIpParams,
         output_class=BlockIpOutput,
-        summary_type=LegacyStringSummary,
+        summary_type=ActionOutput,
         render_as="table",
     )
     app.register_action(
@@ -91,7 +91,7 @@ def register_actions(app: App) -> App:
         read_only=False,
         params_class=IpRpzParams,
         output_class=UnblockIpOutput,
-        summary_type=LegacyStringSummary,
+        summary_type=ActionOutput,
         render_as="table",
     )
     app.register_action(
@@ -104,7 +104,7 @@ def register_actions(app: App) -> App:
         read_only=False,
         params_class=BlockDomainParams,
         output_class=BlockDomainOutput,
-        summary_type=LegacyStringSummary,
+        summary_type=ActionOutput,
         render_as="table",
     )
     app.register_action(
@@ -117,7 +117,7 @@ def register_actions(app: App) -> App:
         read_only=False,
         params_class=DomainRpzParams,
         output_class=UnblockDomainOutput,
-        summary_type=LegacyStringSummary,
+        summary_type=ActionOutput,
         render_as="table",
     )
     app.register_action(
