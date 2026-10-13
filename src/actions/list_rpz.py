@@ -18,7 +18,7 @@ from typing import Any
 
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
-from soar_sdk.params import Param, Params
+from soar_sdk.params import Param
 
 from ..asset import Asset
 from ..consts import (
@@ -31,10 +31,10 @@ from ..consts import (
     INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES,
 )
 from ..infoblox_client import InfobloxClient
-from ._common import _run_action
+from ._common import NetworkViewParams, _run_action
 
 
-class ListRpzParams(Params):
+class ListRpzParams(NetworkViewParams):
     network_view: str | None = Param(
         description="Network view",
         default=INFOBLOX_NETWORK_VIEW_DEFAULT,

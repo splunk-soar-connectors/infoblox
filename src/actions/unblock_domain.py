@@ -17,16 +17,16 @@ from typing import Any
 
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
-from soar_sdk.params import Param, Params
+from soar_sdk.params import Param
 
 from ..asset import Asset
 from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import _run_action
+from ._common import NetworkViewParams, _run_action
 from ._rpz import _domain_rule_action
 
 
-class DomainRpzParams(Params):
+class DomainRpzParams(NetworkViewParams):
     domain: str = Param(
         description="Domain to unblock",
         required=True,

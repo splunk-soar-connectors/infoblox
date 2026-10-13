@@ -18,7 +18,7 @@ from typing import Any
 
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
-from soar_sdk.params import Param, Params
+from soar_sdk.params import Param
 
 from ..asset import Asset
 from ..consts import (
@@ -56,10 +56,10 @@ from ..consts import (
     INFOBLOX_RECORDS_IPv6_ENDPOINT,
 )
 from ..infoblox_client import InfobloxClient
-from ._common import _is_address, _is_ipv6, _run_action
+from ._common import NetworkViewParams, _is_address, _is_ipv6, _run_action
 
 
-class GetSystemInfoParams(Params):
+class GetSystemInfoParams(NetworkViewParams):
     ip_hostname: str = Param(
         description="IP/Hostname",
         required=True,

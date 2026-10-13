@@ -25,6 +25,7 @@ from .actions._common import _is_ip
 from .actions.connectivity import _test_connectivity_handler
 from .asset import Asset
 from .infoblox_client import InfobloxApiError, InfobloxClient, exception_message
+from .legacy_metadata import apply_legacy_output_metadata
 
 
 logger = getLogger()
@@ -97,6 +98,7 @@ def create_infoblox_app() -> App:
     app.actions_manager = LegacyActionAliasManager()
     register_actions(app)
     app.test_connectivity()(test_connectivity)
+    apply_legacy_output_metadata(app)
     return app
 
 
