@@ -21,7 +21,7 @@ from typing import get_args, get_origin
 
 import pytest
 from soar_sdk.action_results import ActionResult
-from soar_sdk.params import MakeRequestParams
+from soar_sdk.exceptions import ActionFailure
 
 from src.actions import _common as action_common
 from src.actions.block_domain import BlockDomainParams
@@ -31,6 +31,7 @@ from src.actions.get_system_info import GetSystemInfoParams
 from src.actions.list_hosts import ListHostsParams
 from src.actions.list_network_view import ListNetworkViewParams
 from src.actions.list_rpz import ListRpzParams
+from src.actions.make_request import InfobloxMakeRequestParams
 from src.actions.unblock_domain import DomainRpzParams
 from src.actions.unblock_ip import IpRpzParams
 from src.asset import Asset
@@ -846,7 +847,17 @@ def test_unblock_domain_already_unblocked_uses_legacy_message_and_cookie(monkeyp
     assert any(call[0] == "cookie" for call in client.requests)
 
 
-def test_make_request_registered_action_uses_asset_auth_and_verification(monkeypatch):
+@pytest.mark.parametrize(
+    ("query_parameters", "expected_query_parameters"),
+    [
+        (
+            "network_view=default&empty=",
+            [("tag", "blue"), ("network_view", "default"), ("empty", "")],
+        ),
+        ('{"network_view":"default"}', [("tag", "blue"), ("network_view", "default")]),
+    ],
+)
+def test_make_request_registered_action_uses_asset_auth_and_verification(monkeypatch, query_parameters, expected_query_parameters):
     class RequestSession:
         def __init__(self):
             self.call = None
@@ -874,10 +885,10 @@ def test_make_request_registered_action_uses_asset_auth_and_verification(monkeyp
     request_action = importlib.import_module("src.actions.make_request")
     monkeypatch.setattr(request_action, "InfobloxClient", RequestClient)
     soar = FakeSoar()
-    params = MakeRequestParams(
+    params = InfobloxMakeRequestParams(
         http_method="GET",
         endpoint="/network?tag=blue",
-        query_parameters="network_view=default&empty=",
+        query_parameters=query_parameters,
         headers='{"Accept":"application/json"}',
         timeout=12,
     )
@@ -893,11 +904,26 @@ def test_make_request_registered_action_uses_asset_auth_and_verification(monkeyp
     assert kwargs["verify"] is False
     assert kwargs["timeout"] == 12
     assert kwargs["headers"] == {"Accept": "application/json"}
-    assert kwargs["params"] == [
-        ("tag", "blue"),
-        ("network_view", "default"),
-        ("empty", ""),
-    ]
+    assert kwargs["params"] == expected_query_parameters
     assert result.get_data() == [{"status_code": 201, "response_body": '{"ok":true}'}]
     assert soar.message is None
     assert session.closed
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "/../../admin",
+        "/%2e%2e/%2e%2e/admin",
+        "/%252e%252e/%252e%252e/admin",
+        r"/..\..\admin",
+        "/..;parameter/admin",
+        "/network/\x00admin",
+    ],
+)
+def test_make_request_rejects_paths_that_can_escape_wapi(endpoint):
+    request_action = importlib.import_module("src.actions.make_request")
+    params = InfobloxMakeRequestParams(http_method="GET", endpoint=endpoint)
+
+    with pytest.raises(ActionFailure, match="endpoint path"):
+        request_action.make_request(params, make_asset())

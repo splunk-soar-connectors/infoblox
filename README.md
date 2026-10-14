@@ -8,6 +8,10 @@ Minimum Product Version: 7.0.0
 
 This app supports various containment and investigative actions on Infoblox Grid Manager
 
+### Additional behavior notes
+
+Lease and RPZ last-updated timestamps are displayed in the local timezone of the SOAR worker.
+
 ### Configuration variables
 
 This table lists the configuration variables required to operate Infoblox DDI. These variables are specified when configuring a Infoblox DDI asset in Splunk SOAR.
@@ -366,9 +370,9 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
 **http_method** | required | The HTTP method to use for the request. | string | |
 **endpoint** | required | The endpoint to send the request to. | string | |
-**headers** | optional | The headers to send with the request (JSON object). An example is {'Content-Type': 'application/json'} | string | |
+**headers** | optional | The headers to send with the request (JSON object). An example is {"Content-Type": "application/json"} | string | |
 **query_parameters** | optional | Parameters to append to the URL (JSON object or query string). An example is ?key=value&key2=value2 | string | |
-**body** | optional | The body to send with the request (JSON object). An example is {'key': 'value', 'key2': 'value2'} | string | |
+**body** | optional | The body to send with the request (JSON object). An example is {"key": "value", "key2": "value2"} | string | |
 **timeout** | optional | The timeout for the request in seconds. | numeric | |
 **verify_ssl** | optional | Whether to verify the SSL certificate. Default is True. | boolean | |
 

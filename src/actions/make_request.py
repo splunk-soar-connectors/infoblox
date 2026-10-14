@@ -15,15 +15,28 @@
 
 import json
 from typing import Any
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 import requests
 from soar_sdk.action_results import MakeRequestOutput
 from soar_sdk.exceptions import ActionFailure
-from soar_sdk.params import MakeRequestParams
+from soar_sdk.params import MakeRequestParams, Param
 
 from ..asset import Asset
 from ..infoblox_client import InfobloxClient, exception_message
+
+
+class InfobloxMakeRequestParams(MakeRequestParams):
+    """Make-request inputs with valid JSON examples in the action metadata."""
+
+    headers: str = Param(
+        description='The headers to send with the request (JSON object). An example is {"Content-Type": "application/json"}',
+        required=False,
+    )
+    body: str = Param(
+        description='The body to send with the request (JSON object). An example is {"key": "value", "key2": "value2"}',
+        required=False,
+    )
 
 
 def _parse_json_object(value: str | None, field_name: str) -> dict[str, Any]:
@@ -38,21 +51,46 @@ def _parse_json_object(value: str | None, field_name: str) -> dict[str, Any]:
     return parsed
 
 
-def make_request(params: MakeRequestParams, asset: Asset) -> MakeRequestOutput:
+def _validate_wapi_path(path: str) -> None:
+    """Reject path syntax that could escape the versioned WAPI endpoint."""
+    decoded_path = path
+    while True:
+        fully_decoded_path = unquote(decoded_path)
+        if fully_decoded_path == decoded_path:
+            break
+        decoded_path = fully_decoded_path
+
+    if "\\" in decoded_path or any(ord(character) < 0x20 or ord(character) == 0x7F for character in decoded_path):
+        raise ActionFailure("endpoint path contains an invalid character")
+
+    # Some HTTP servers treat semicolon suffixes as path parameters before
+    # normalizing dot segments, so validate both plain and parameterized forms.
+    if any(segment.split(";", 1)[0] in {".", ".."} for segment in decoded_path.split("/")):
+        raise ActionFailure("endpoint path must not contain dot segments")
+
+
+def make_request(params: InfobloxMakeRequestParams, asset: Asset) -> MakeRequestOutput:
     """Send an authenticated request to an Infoblox WAPI endpoint."""
     endpoint = params.endpoint.strip()
     parsed_endpoint = urlsplit(endpoint)
     if parsed_endpoint.scheme or parsed_endpoint.netloc:
         raise ActionFailure("endpoint must be a relative WAPI path")
     path = parsed_endpoint.path or "/"
-    if path.startswith("/wapi/v2.3.1"):
+    _validate_wapi_path(path)
+    wapi_prefix = "/wapi/v2.3.1"
+    if path == wapi_prefix:
+        path = "/"
+    elif path.startswith(f"{wapi_prefix}/"):
         path = path[len("/wapi/v2.3.1") :] or "/"
+    elif path.startswith(wapi_prefix):
+        raise ActionFailure("endpoint path has an invalid WAPI prefix")
     if not path.startswith("/"):
         path = f"/{path}"
 
     headers = _parse_json_object(params.headers, "headers")
     if params.query_parameters and params.query_parameters.lstrip().startswith("{"):
-        query_parameters: Any = _parse_json_object(params.query_parameters, "query_parameters")
+        query_parameters = parse_qsl(parsed_endpoint.query, keep_blank_values=True)
+        query_parameters.extend(_parse_json_object(params.query_parameters, "query_parameters").items())
     else:
         query_text = params.query_parameters or ""
         if parsed_endpoint.query:
