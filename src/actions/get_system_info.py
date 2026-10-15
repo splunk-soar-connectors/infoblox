@@ -174,7 +174,7 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
     else:
         lease_query[INFOBLOX_JSON_CLIENT_HOSTNAME] = hostname
     lease_query[INFOBLOX_JSON_NETWORK_VIEW] = network_view
-    lease_response = client.request(INFOBLOX_LEASE, params=lease_query, method="get").data
+    lease_response = client.wapi_request(INFOBLOX_LEASE, params=lease_query, method="get").data
     lease_rows = lease_response or []
 
     host_rows: list[dict[str, Any]] | None = None
@@ -202,14 +202,14 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
                 INFOBLOX_JSON_CONTEXT_NAME_SEARCH: hostname,
                 INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
-        host_rows = client.request(host_endpoint, params=host_query, method="get").data
+        host_rows = client.wapi_request(host_endpoint, params=host_query, method="get").data
         if not is_ipv4 and not is_ipv6 and not host_rows:
             host_query = {
                 INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
                 INFOBLOX_JSON_CONTEXT_NAME_SEARCH: hostname,
                 INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
-            host_rows = client.request(INFOBLOX_RECORDS_IPv6_ENDPOINT, params=host_query, method="get").data
+            host_rows = client.wapi_request(INFOBLOX_RECORDS_IPv6_ENDPOINT, params=host_query, method="get").data
 
     if not lease_rows and not host_rows:
         return {

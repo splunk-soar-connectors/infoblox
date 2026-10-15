@@ -97,7 +97,7 @@ def ip_rule_action(
     _validate_rpz(client, rp_zone, view)
     client.use_session_cookie()
     query = {INFOBLOX_JSON_RECORD_NAME: rule_name, INFOBLOX_PARAM_ZONE: rp_zone, INFOBLOX_PARAM_VIEW: view}
-    response = client.request(endpoint, params=query, method="get").data
+    response = client.wapi_request(endpoint, params=query, method="get").data
     existing = response or []
 
     if block:
@@ -112,7 +112,7 @@ def ip_rule_action(
         if comment:
             payload[INFOBLOX_JSON_COMMENT] = comment
         # Preserve the legacy request shape: this POST sends its values as query parameters.
-        created = client.request(endpoint, params=payload, method="post").data
+        created = client.wapi_request(endpoint, params=payload, method="post").data
         return {
             "success": True,
             "message": INFOBLOX_BLOCK_IP_SUCCESS,
@@ -127,7 +127,7 @@ def ip_rule_action(
             "message": INFOBLOX_IP_NOT_IN_BLOCKED_STATE,
         }
     ref = existing[0].get(INFOBLOX_JSON_REF)
-    deleted = client.request(f"/{ref}", method="delete").data
+    deleted = client.wapi_request(f"/{ref}", method="delete").data
     return {
         "success": True,
         "message": INFOBLOX_IP_UNBLOCK_SUCCESS,
@@ -158,7 +158,7 @@ def domain_rule_action(
     _validate_rpz(client, rp_zone, view)
     client.use_session_cookie()
     query = {INFOBLOX_JSON_RECORD_NAME: rule_name, INFOBLOX_PARAM_ZONE: rp_zone, INFOBLOX_PARAM_VIEW: view}
-    response = client.request(endpoint, params=query, method="get").data
+    response = client.wapi_request(endpoint, params=query, method="get").data
     existing = response or []
 
     if block:
@@ -172,7 +172,7 @@ def domain_rule_action(
         payload = {INFOBLOX_JSON_RECORD_NAME: rule_name, INFOBLOX_JSON_RP_ZONE: rp_zone, INFOBLOX_PARAM_CANONICAL: "", INFOBLOX_PARAM_VIEW: view}
         if comment:
             payload[INFOBLOX_JSON_COMMENT] = comment
-        created = client.request(endpoint, data=payload).data
+        created = client.wapi_request(endpoint, data=payload).data
         return {
             "success": True,
             "message": INFOBLOX_BLOCK_DOMAIN_SUCCESS,
@@ -187,7 +187,7 @@ def domain_rule_action(
             "message": INFOBLOX_DOMAIN_NOT_IN_BLOCKED_STATE,
         }
     ref = existing[0].get(INFOBLOX_JSON_REF)
-    deleted = client.request(f"/{ref}", method="delete").data
+    deleted = client.wapi_request(f"/{ref}", method="delete").data
     return {
         "success": True,
         "message": INFOBLOX_DOMAIN_UNBLOCK_SUCCESS,
