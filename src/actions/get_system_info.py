@@ -18,7 +18,9 @@ from typing import Any
 
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
+from soar_sdk.meta.actions import ActionMeta
 from soar_sdk.params import Param
+from soar_sdk.types import Action
 
 from ..asset import Asset
 from ..consts import (
@@ -57,6 +59,38 @@ from ..consts import (
 )
 from ..infoblox_client import InfobloxClient
 from .common import NetworkViewParams, is_address, is_ipv6, run_action
+
+
+_TABLE_COLUMN_ORDERS = {
+    "action_result.parameter.network_view": 9,
+    "action_result.data.*.address": 0,
+    "action_result.data.*.client_hostname": 1,
+    "action_result.data.*.server_host_name": 2,
+    "action_result.data.*.os": 3,
+    "action_result.data.*.binding_state": 4,
+    "action_result.data.*.starts": 5,
+    "action_result.data.*.ends": 6,
+    "action_result.data.*.cltt": 7,
+    "action_result.data.*.network": 8,
+    "action_result.data.*.served_by": 10,
+}
+
+
+class GetSystemInfoMeta(ActionMeta):
+    """Keep this action's declared table column order in generated metadata."""
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        metadata = super().model_dump(*args, **kwargs)
+        for field in metadata.get("output", []):
+            if (column_order := _TABLE_COLUMN_ORDERS.get(field["data_path"])) is not None:
+                field["column_order"] = column_order
+        return metadata
+
+
+def apply_table_column_order(action: Action) -> None:
+    """Apply the action-specific table column order supported by its output contract."""
+    meta = action.meta
+    action.meta = GetSystemInfoMeta(**{name: getattr(meta, name) for name in ActionMeta.model_fields})
 
 
 class GetSystemInfoParams(NetworkViewParams):

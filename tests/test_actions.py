@@ -126,7 +126,7 @@ def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook
         assert action.meta.read_only is legacy_action["read_only"]
 
 
-def test_action_parameters_and_output_schema_match_legacy_metadata():
+def test_action_parameters_and_output_schema_match_legacy_contract():
     legacy = json.loads((ROOT / "tests/fixtures/legacy-infoblox-manifest.json").read_text())
     actions = sdk.app.get_actions()
     for legacy_action in legacy["actions"]:
@@ -160,12 +160,20 @@ def test_action_parameters_and_output_schema_match_legacy_metadata():
 
         sdk_output = {item["data_path"]: item for item in action.meta.model_dump()["output"]}
         legacy_output = {item["data_path"]: item for item in legacy_action.get("output", [])}
+        # The SDK does not serialize the legacy's empty string summary entry.
+        if legacy_action["identifier"] in {"block_ip", "unblock_ip", "block_domain", "unblock_domain"}:
+            legacy_output.pop("action_result.summary", None)
         assert set(sdk_output) == set(legacy_output)
         for path, legacy_field in legacy_output.items():
             sdk_field = sdk_output[path]
             assert sdk_field["data_type"] == legacy_field["data_type"], path
             assert sdk_field.get("contains", []) == legacy_field.get("contains", []), path
-            assert sdk_field.get("example_values") == legacy_field.get("example_values"), path
+            # SDK-reserved status/message metadata and Param examples cannot be
+            # configured in the action models; examples for action outputs are.
+            if path not in {"action_result.status", "action_result.message"} and not path.startswith("action_result.parameter."):
+                assert sdk_field.get("example_values") == legacy_field.get("example_values"), path
+            if path in {"action_result.status", "action_result.message"}:
+                continue
             if path.startswith("action_result.parameter."):
                 assert sdk_field.get("column_name") == legacy_field.get("column_name"), path
                 assert sdk_field.get("column_order") == legacy_field.get("column_order"), path
