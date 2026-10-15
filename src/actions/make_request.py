@@ -69,8 +69,45 @@ def _validate_wapi_path(path: str) -> None:
         raise ActionFailure("endpoint path must not contain dot segments")
 
 
+def _validate_no_duplicate_query_parameters(endpoint: str, query_parameters: str | None) -> None:
+    """Reject query keys provided in both the endpoint and query_parameters."""
+    endpoint_keys = {
+        key
+        for key, _ in parse_qsl(
+            urlsplit(endpoint.strip()).query,
+            keep_blank_values=True,
+        )
+    }
+    if not endpoint_keys or not query_parameters:
+        return
+
+    query_text = query_parameters.strip()
+    if query_text.startswith("{"):
+        try:
+            parsed_parameters = json.loads(query_text)
+        except json.JSONDecodeError:
+            return  # The action reports the existing JSON input error.
+        if not isinstance(parsed_parameters, dict):
+            return  # The action reports the existing JSON object error.
+        parameter_keys = set(parsed_parameters)
+    else:
+        parameter_keys = {
+            key
+            for key, _ in parse_qsl(
+                query_text.lstrip("?"),
+                keep_blank_values=True,
+            )
+        }
+
+    duplicates = sorted(endpoint_keys & parameter_keys)
+    if duplicates:
+        duplicate_names = ", ".join(duplicates)
+        raise ActionFailure(f"query parameter(s) {duplicate_names} are specified in both endpoint and query_parameters")
+
+
 def make_request(params: InfobloxMakeRequestParams, asset: Asset) -> MakeRequestOutput:
     """Send an authenticated request to an Infoblox WAPI endpoint."""
+    _validate_no_duplicate_query_parameters(params.endpoint, params.query_parameters)
     endpoint = params.endpoint.strip()
     parsed_endpoint = urlsplit(endpoint)
     if parsed_endpoint.scheme or parsed_endpoint.netloc:

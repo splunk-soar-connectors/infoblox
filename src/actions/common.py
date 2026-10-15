@@ -42,7 +42,7 @@ class NetworkViewParams(Params):
         return values
 
 
-def _is_ipv6(value: str) -> bool:
+def is_ipv6(value: str) -> bool:
     try:
         socket.inet_pton(socket.AF_INET6, value)
     except OSError:
@@ -50,7 +50,7 @@ def _is_ipv6(value: str) -> bool:
     return True
 
 
-def _is_ip(value: str) -> bool:
+def is_ip(value: str) -> bool:
     try:
         if "/" in value:
             address, prefix = value.split("/", 1)
@@ -61,7 +61,7 @@ def _is_ip(value: str) -> bool:
     except (ValueError, TypeError) as error:
         logger.debug(f"{INFOBLOX_IP_VALIDATION_FAILED}. {exception_message(error)}")
         return False
-    if ":" in address and not _is_ipv6(address):
+    if ":" in address and not is_ipv6(address):
         logger.debug(INFOBLOX_IP_VALIDATION_FAILED)
         return False
     if not 0 <= prefix_size <= parsed.max_prefixlen:
@@ -70,20 +70,20 @@ def _is_ip(value: str) -> bool:
     return True
 
 
-def _is_address(value: str) -> bool:
+def is_address(value: str) -> bool:
     """True only for a host address, matching the legacy lease lookup test."""
     try:
         ipaddress.ip_address(value)
     except ValueError:
         return False
-    return ":" not in value or _is_ipv6(value)
+    return ":" not in value or is_ipv6(value)
 
 
 def _params_dict(params: Params) -> dict[str, Any]:
     return params.model_dump(exclude_unset=True, by_alias=True)
 
 
-def _action_result(
+def action_result(
     params: Params,
     soar: SOARClient,
     summary_type: type[ActionOutput],
@@ -104,7 +104,7 @@ def _action_result(
     return result
 
 
-def _run_action(
+def run_action(
     params: Params,
     asset: Asset,
     soar: SOARClient,
@@ -142,4 +142,4 @@ def _run_action(
     finally:
         client.close()
 
-    return _action_result(params, soar, summary_type, **outcome)
+    return action_result(params, soar, summary_type, **outcome)

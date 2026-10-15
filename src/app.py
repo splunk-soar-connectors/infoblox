@@ -14,14 +14,12 @@
 """Splunk SOAR SDK application entry point for Infoblox DDI."""
 
 from soar_sdk.abstract import SOARClient
-from soar_sdk.actions_manager import ActionsManager
 from soar_sdk.app import App
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.logging import getLogger
 from soar_sdk.params import Params
 
 from .actions import register_actions
-from .actions._common import _is_ip
 from .actions.connectivity import _test_connectivity_handler
 from .asset import Asset
 from .infoblox_client import InfobloxApiError, InfobloxClient, exception_message
@@ -29,26 +27,6 @@ from .legacy_metadata import apply_legacy_output_metadata
 
 
 logger = getLogger()
-
-
-class LegacyActionAliasManager(ActionsManager):
-    """Route the removed legacy connectivity identifier to the SDK test hook."""
-
-    _action_aliases = {"test_asset_connectivity": "test_connectivity"}
-
-    def initialize(self):
-        """Restore the legacy custom IP validator before BaseConnector validates inputs."""
-        result = super().initialize()
-        set_validator = getattr(self, "set_validator", None)
-        if callable(set_validator):
-            # The legacy connector replaced SOAR's default `contains: ip`
-            # validation so IPv6 addresses and CIDR networks remain accepted.
-            set_validator("ip", _is_ip)
-        return result
-
-    def get_action(self, identifier: str):
-        """Resolve legacy playbook action identifiers without manifest duplicates."""
-        return super().get_action(self._action_aliases.get(identifier, identifier))
 
 
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
@@ -94,8 +72,6 @@ def create_infoblox_app() -> App:
         fips_compliant=False,
         asset_cls=Asset,
     )
-    # Keep one test action in the manifest while continuing to dispatch old playbooks.
-    app.actions_manager = LegacyActionAliasManager()
     register_actions(app)
     app.test_connectivity()(test_connectivity)
     apply_legacy_output_metadata(app)

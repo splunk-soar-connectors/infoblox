@@ -23,17 +23,17 @@ import pytest
 from soar_sdk.action_results import ActionResult
 from soar_sdk.exceptions import ActionFailure
 
-from src.actions import _common as action_common
+from src.actions import common as action_common
 from src.actions.block_domain import BlockDomainParams
-from src.actions.block_ip import BlockIpParams
-from src.actions.get_network_info import GetNetworkInfoParams
+from src.actions.block_ip import BlockIpParams, block_ip
+from src.actions.get_network_info import GetNetworkInfoParams, get_network_info
 from src.actions.get_system_info import GetSystemInfoParams
 from src.actions.list_hosts import ListHostsParams
 from src.actions.list_network_view import ListNetworkViewParams
 from src.actions.list_rpz import ListRpzParams
 from src.actions.make_request import InfobloxMakeRequestParams
 from src.actions.unblock_domain import DomainRpzParams
-from src.actions.unblock_ip import IpRpzParams
+from src.actions.unblock_ip import IpRpzParams, unblock_ip
 from src.asset import Asset
 from src.consts import INFOBLOX_HOST_INFO_UNAVAILABLE, INFOBLOX_JSON_DATE_FORMAT
 from src.infoblox_client import InfobloxApiError
@@ -114,7 +114,7 @@ def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook
     assert expected - {"test_asset_connectivity"} <= actions.keys()
     assert set(actions) == (expected - {"test_asset_connectivity"}) | {"make_request", "test_connectivity"}
     assert "test_asset_connectivity" not in actions
-    assert sdk.app.actions_manager.get_action("test_asset_connectivity") is actions["test_connectivity"]
+    assert "test_connectivity" in actions
     assert actions["test_connectivity"].meta.type == "test"
     assert actions["test_connectivity"].meta.read_only is True
     for legacy_action in legacy["actions"]:
@@ -124,27 +124,6 @@ def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook
         assert action.meta.action == legacy_action["action"]
         assert action.meta.type == legacy_action["type"]
         assert action.meta.read_only is legacy_action["read_only"]
-
-
-def test_action_manager_restores_legacy_contains_ip_validator(monkeypatch):
-    calls = []
-    monkeypatch.setattr(
-        sdk.LegacyActionAliasManager,
-        "set_validator",
-        lambda manager, contains, validator: calls.append((contains, validator)),
-        raising=False,
-    )
-
-    manager = sdk.LegacyActionAliasManager()
-    assert manager.initialize()
-
-    assert len(calls) == 1
-    contains, validator = calls[0]
-    assert contains == "ip"
-    for value in ("2001:db8:abcd:12::", "1.1.1.0/28", "10.0.0.5"):
-        assert validator(value)
-    for value in ("not-an-ip", ""):
-        assert not validator(value)
 
 
 def test_action_parameters_and_output_schema_match_legacy_metadata():
@@ -304,20 +283,29 @@ def test_get_network_info_filters_host_address_without_losing_structures(monkeyp
 
 
 @pytest.mark.parametrize(
-    ("params_class", "required_values"),
+    ("params_class", "required_values", "action"),
     [
-        (GetNetworkInfoParams, {}),
-        (IpRpzParams, {"rp_zone": "block.example"}),
-        (BlockIpParams, {"rp_zone": "block.example"}),
+        (GetNetworkInfoParams, {}, get_network_info),
+        (IpRpzParams, {"rp_zone": "block.example"}, unblock_ip),
+        (BlockIpParams, {"rp_zone": "block.example"}, block_ip),
     ],
 )
-def test_ip_parameters_match_legacy_connector_validator(params_class, required_values):
+def test_ip_parameters_fail_before_client_creation(monkeypatch, params_class, required_values, action):
     for value in ("10.0.0.5", "2001:db8:abcd:12::", "1.1.1.0/28"):
         params_class.model_validate({**required_values, "ip": value})
 
     for value in ("not-an-ip", ""):
-        with pytest.raises(ValueError, match="parameter 'ip' validation failed"):
-            params_class.model_validate({**required_values, "ip": value})
+        params = params_class.model_validate({**required_values, "ip": value})
+        monkeypatch.setattr(
+            action_common,
+            "InfobloxClient",
+            lambda _asset: pytest.fail("invalid IP must fail before client creation"),
+        )
+        soar = FakeSoar()
+        result = action(params, soar=soar, asset=make_asset())
+        assert not result.get_status()
+        assert result.get_message() == "parameter 'ip' validation failed"
+        assert soar.get_message() == "parameter 'ip' validation failed"
 
 
 def test_get_system_info_preserves_types_and_has_no_time_filter(monkeypatch):
@@ -634,7 +622,7 @@ def test_sdk_test_connectivity_hook_invokes_the_asset_check(monkeypatch):
         lambda function, *, soar: {"soar": soar, "asset": make_asset()},
     )
 
-    action = sdk.app.actions_manager.get_action("test_asset_connectivity")
+    action = sdk.app.actions_manager.get_action("test_connectivity")
     assert action(soar=FakeSoar()) is True
     assert client.requests[0] == ("request", "/?_schema", {"method": "get", "timeout": 30})
     assert client.logout_called and client.closed
@@ -908,6 +896,23 @@ def test_make_request_registered_action_uses_asset_auth_and_verification(monkeyp
     assert result.get_data() == [{"status_code": 201, "response_body": '{"ok":true}'}]
     assert soar.message is None
     assert session.closed
+
+
+def test_make_request_rejects_duplicate_query_keys_before_client_creation(monkeypatch):
+    request_action = importlib.import_module("src.actions.make_request")
+    params = InfobloxMakeRequestParams(
+        http_method="GET",
+        endpoint="/network?tag=blue&network_view=old",
+        query_parameters='{"network_view":"default"}',
+    )
+    monkeypatch.setattr(
+        request_action,
+        "InfobloxClient",
+        lambda _asset: pytest.fail("duplicate query keys must fail before client creation"),
+    )
+
+    with pytest.raises(ActionFailure, match="specified in both endpoint and query_parameters"):
+        request_action.make_request(params, make_asset())
 
 
 @pytest.mark.parametrize(

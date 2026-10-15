@@ -31,7 +31,7 @@ from ..consts import (
     INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES,
 )
 from ..infoblox_client import InfobloxClient
-from ._common import NetworkViewParams, _run_action
+from .common import NetworkViewParams, run_action
 
 
 class ListRpzParams(NetworkViewParams):
@@ -92,4 +92,4 @@ def _list_rpz_handler(client: InfobloxClient, params: ListRpzParams) -> dict[str
 
 
 def list_rpz(params: ListRpzParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, ListRpzSummary, _list_rpz_handler)
+    return run_action(params, asset, soar, ListRpzSummary, _list_rpz_handler)

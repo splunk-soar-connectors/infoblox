@@ -22,8 +22,8 @@ from soar_sdk.params import Param
 from ..asset import Asset
 from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import NetworkViewParams, _run_action
-from ._rpz import _domain_rule_action
+from .common import NetworkViewParams, run_action
+from .rpz import domain_rule_action
 
 
 class DomainRpzParams(NetworkViewParams):
@@ -75,8 +75,8 @@ class DomainOutput(ActionOutput):
 
 
 def _block_domain_handler(client: InfobloxClient, params: BlockDomainParams) -> dict[str, Any]:
-    return _domain_rule_action(client, params, block=True, comment=params.comment)
+    return domain_rule_action(client, params, block=True, comment=params.comment)
 
 
 def block_domain(params: BlockDomainParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, ActionOutput, _block_domain_handler)
+    return run_action(params, asset, soar, ActionOutput, _block_domain_handler)

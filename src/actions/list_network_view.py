@@ -22,7 +22,7 @@ from soar_sdk.params import Params
 from ..asset import Asset
 from ..consts import INFOBLOX_NETWORK_VIEW, INFOBLOX_NETWORK_VIEW_INFO_UNAVAILABLE
 from ..infoblox_client import InfobloxClient
-from ._common import _run_action
+from .common import run_action
 
 
 class ListNetworkViewParams(Params):
@@ -64,4 +64,4 @@ def _list_network_view_handler(client: InfobloxClient, _params: Params) -> dict[
 
 
 def list_network_view(params: ListNetworkViewParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, ListNetworkViewSummary, _list_network_view_handler)
+    return run_action(params, asset, soar, ListNetworkViewSummary, _list_network_view_handler)

@@ -56,7 +56,7 @@ from ..consts import (
     INFOBLOX_RECORDS_IPv6_ENDPOINT,
 )
 from ..infoblox_client import InfobloxClient
-from ._common import NetworkViewParams, _is_address, _is_ipv6, _run_action
+from .common import NetworkViewParams, is_address, is_ipv6, run_action
 
 
 class GetSystemInfoParams(NetworkViewParams):
@@ -135,7 +135,7 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
     # Keep an explicitly supplied None intact, as the legacy connector did.
     network_view = params.network_view
     lease_query: dict[str, Any] = {INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_LEASE_RETURN_FIELDS}
-    if _is_address(hostname) or _is_ipv6(hostname):
+    if is_address(hostname) or is_ipv6(hostname):
         lease_query[INFOBLOX_JSON_ADDRESS] = hostname
     else:
         lease_query[INFOBLOX_JSON_CLIENT_HOSTNAME] = hostname
@@ -145,8 +145,8 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
 
     host_rows: list[dict[str, Any]] | None = None
     if network_view == INFOBLOX_NETWORK_VIEW_DEFAULT:
-        is_ipv4 = _is_address(hostname) and ":" not in hostname
-        is_ipv6 = _is_ipv6(hostname)
+        is_ipv4 = is_address(hostname) and ":" not in hostname
+        hostname_is_ipv6 = is_ipv6(hostname)
         if is_ipv4:
             host_endpoint = INFOBLOX_RECORDS_IPv4_ENDPOINT
             host_query = {
@@ -154,7 +154,7 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
                 INFOBLOX_JSON_A_IP: hostname,
                 INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
-        elif is_ipv6:
+        elif hostname_is_ipv6:
             host_endpoint = INFOBLOX_RECORDS_IPv6_ENDPOINT
             host_query = {
                 INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
@@ -193,7 +193,7 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
             zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
             if name.endswith(zone_suffix):
                 name = name[: -len(zone_suffix)]
-            if not (_is_address(hostname) or _is_ipv6(hostname)) and name != hostname:
+            if not (is_address(hostname) or is_ipv6(hostname)) and name != hostname:
                 continue
             # Match legacy get(..., {}) semantics: a missing field is empty,
             # while an explicitly malformed None value still raises on .get.
@@ -204,9 +204,9 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
                 INFOBLOX_JSON_OS: discovered.get(INFOBLOX_JSON_OS),
                 INFOBLOX_JSON_ADDRESS: host.get(INFOBLOX_JSON_A_IP, host.get(INFOBLOX_JSON_AAAA_IP)),
             }
-            if host.get(INFOBLOX_JSON_A_IP) and _is_address(host[INFOBLOX_JSON_A_IP]):
+            if host.get(INFOBLOX_JSON_A_IP) and is_address(host[INFOBLOX_JSON_A_IP]):
                 item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV4
-            elif host.get(INFOBLOX_JSON_AAAA_IP) and _is_address(host[INFOBLOX_JSON_AAAA_IP]):
+            elif host.get(INFOBLOX_JSON_AAAA_IP) and is_address(host[INFOBLOX_JSON_AAAA_IP]):
                 item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV6
             summary[INFOBLOX_JSON_MAC_ADDRESS] = item[INFOBLOX_JSON_HARDWARE]
             summary[INFOBLOX_JSON_IS_STATIC_IP] = True
@@ -247,4 +247,4 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
 
 
 def get_system_info(params: GetSystemInfoParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, GetSystemInfoSummary, _get_system_info_handler)
+    return run_action(params, asset, soar, GetSystemInfoSummary, _get_system_info_handler)

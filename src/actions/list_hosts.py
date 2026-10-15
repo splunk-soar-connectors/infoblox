@@ -34,7 +34,7 @@ from ..consts import (
     INFOBLOX_RECORDS_IPv6_ENDPOINT,
 )
 from ..infoblox_client import InfobloxApiError, InfobloxClient
-from ._common import _run_action
+from .common import run_action
 
 
 class DiscoveredDataOutput(ActionOutput):
@@ -113,4 +113,4 @@ def _list_hosts_handler(client: InfobloxClient, _params: Params) -> dict[str, An
 
 
 def list_hosts(params: ListHostsParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, ListHostsSummary, _list_hosts_handler)
+    return run_action(params, asset, soar, ListHostsSummary, _list_hosts_handler)

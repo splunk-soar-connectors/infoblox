@@ -79,7 +79,7 @@ def _normalize_domain(value: str) -> str:
         return value
 
 
-def _ip_rule_action(
+def ip_rule_action(
     client: InfobloxClient,
     params: Params,
     *,
@@ -135,7 +135,7 @@ def _ip_rule_action(
     }
 
 
-def _domain_rule_action(
+def domain_rule_action(
     client: InfobloxClient,
     params: Params,
     *,

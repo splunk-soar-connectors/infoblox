@@ -15,16 +15,15 @@
 
 from typing import Any
 
-from pydantic import field_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
 from soar_sdk.params import Param
 
 from ..asset import Asset
-from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
+from ..consts import INFOBLOX_IP_VALIDATION_FAILED, INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxClient
-from ._common import NetworkViewParams, _is_ip, _run_action
-from ._rpz import _ip_rule_action
+from .common import NetworkViewParams, action_result, is_ip, run_action
+from .rpz import ip_rule_action
 
 
 class IpRpzParams(NetworkViewParams):
@@ -50,13 +49,6 @@ class IpRpzParams(NetworkViewParams):
         column_name="Network View",
     )
 
-    @field_validator("ip")
-    @classmethod
-    def validate_ip(cls, value: str) -> str:
-        if not _is_ip(value):
-            raise ValueError("parameter 'ip' validation failed")
-        return value
-
 
 class BlockIpOutput(ActionOutput):
     reference_link: str | None = OutputField(
@@ -65,8 +57,16 @@ class BlockIpOutput(ActionOutput):
 
 
 def _unblock_ip_handler(client: InfobloxClient, params: IpRpzParams) -> dict[str, Any]:
-    return _ip_rule_action(client, params, block=False)
+    return ip_rule_action(client, params, block=False)
 
 
 def unblock_ip(params: IpRpzParams, soar: SOARClient, asset: Asset):
-    return _run_action(params, asset, soar, ActionOutput, _unblock_ip_handler)
+    if not is_ip(params.ip):
+        return action_result(
+            params,
+            soar,
+            ActionOutput,
+            success=False,
+            message=INFOBLOX_IP_VALIDATION_FAILED,
+        )
+    return run_action(params, asset, soar, ActionOutput, _unblock_ip_handler)
