@@ -137,14 +137,15 @@ def make_request(params: InfobloxMakeRequestParams, asset: Asset) -> MakeRequest
     client = InfobloxClient(asset)
     try:
         verify_ssl = params.verify_ssl if "verify_ssl" in params.model_fields_set else client.verify_ssl
-        response = client.request(
-            path,
-            method=params.http_method,
+        response = client.session.request(
+            params.http_method.upper(),
+            f"{client.base_url}{path}",
+            auth=client.auth,
             headers=headers,
             params=query_parameters,
             data=params.body or None,
             timeout=params.timeout,
-            verify_ssl=verify_ssl,
+            verify=verify_ssl,
         )
         return MakeRequestOutput(
             status_code=response.status_code,

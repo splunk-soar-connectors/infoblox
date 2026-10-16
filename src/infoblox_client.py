@@ -60,7 +60,9 @@ class InfobloxApiError(Exception):
 
 @dataclass
 class ApiResponse:
+    status_code: int
     data: Any
+    content_type: str
 
 
 def exception_message(error: Exception) -> str:
@@ -93,42 +95,25 @@ class InfobloxClient:
         method: str = "post",
         params: Any = None,
         data: Any = None,
-        headers: dict[str, str] | None = None,
         timeout: int | None = None,
-        verify_ssl: bool | None = None,
-    ) -> requests.Response:
-        """Send an authenticated HTTP request to a relative WAPI endpoint."""
-        if getattr(self.session, method.lower(), None) is None:
+        allow_not_found: bool = False,
+    ) -> ApiResponse:
+        """Call a relative WAPI endpoint and parse its response like the legacy app."""
+        request_func = getattr(self.session, method.lower(), None)
+        if request_func is None:
             raise InfobloxApiError(f"Unsupported method {method}")
 
         request_kwargs: dict[str, Any] = {
             "auth": self.auth,
             "params": params,
             "data": data,
-            "verify": self.verify_ssl if verify_ssl is None else verify_ssl,
+            "verify": self.verify_ssl,
         }
-        if headers is not None:
-            request_kwargs["headers"] = headers
         if timeout is not None:
             request_kwargs["timeout"] = timeout
 
-        return self.session.request(method.upper(), f"{self.base_url}{endpoint}", **request_kwargs)
-
-    def wapi_request(
-        self,
-        endpoint: str,
-        *,
-        method: str = "post",
-        params: Any = None,
-        data: Any = None,
-        timeout: int | None = None,
-        allow_not_found: bool = False,
-    ) -> ApiResponse:
-        """Parse a WAPI response and apply the connector's legacy error behavior."""
         try:
-            response = self.request(endpoint, method=method, params=params, data=data, timeout=timeout)
-        except InfobloxApiError:
-            raise
+            response = request_func(f"{self.base_url}{endpoint}", **request_kwargs)
         except Exception as error:
             raise InfobloxApiError(f"{INFOBLOX_ERROR_SERVER_CONNECTION}. {exception_message(error)}") from error
 
@@ -140,7 +125,11 @@ class InfobloxClient:
             response_data: dict[str, Any] = {INFOBLOX_RESOURCE_NOT_FOUND: True}
             if isinstance(response_json, dict):
                 response_data[INFOBLOX_JSON_ERROR_MESSAGE] = response_json.get(INFOBLOX_JSON_TEXT)
-            return ApiResponse(data=response_data)
+            return ApiResponse(
+                status_code=response.status_code,
+                data=response_data,
+                content_type=response.headers.get(INFOBLOX_JSON_CONTENT_TYPE, ""),
+            )
 
         if response.status_code in INFOBLOX_REST_RESPONSE_MESSAGES:
             message = INFOBLOX_REST_RESPONSE_MESSAGES[response.status_code]
@@ -160,7 +149,11 @@ class InfobloxClient:
             raise InfobloxApiError(f"{parse_message}. {exception_message(error)}") from error
 
         if response.status_code in (200, 201):
-            return ApiResponse(data=response_data)
+            return ApiResponse(
+                status_code=response.status_code,
+                data=response_data,
+                content_type=content_type,
+            )
 
         raise InfobloxApiError(INFOBLOX_ERROR_FROM_SERVER.format(status=response.status_code, detail=INFOBLOX_REST_RESP_OTHER_ERROR_MESSAGE))
 
@@ -183,7 +176,7 @@ class InfobloxClient:
                 INFOBLOX_JSON_MAX_RESULTS: INFOBLOX_PAGE_SIZE,
             }
         )
-        response = self.wapi_request(
+        response = self.request(
             endpoint,
             params=first_page_params,
             method=method,
@@ -211,7 +204,7 @@ class InfobloxClient:
             seen_page_ids.add(page_id)
             page_count += 1
             logger.debug(INFOBLOX_PAGE_COUNT.format(page_count))
-            response = self.wapi_request(
+            response = self.request(
                 endpoint,
                 params=page_params,
                 method=method,
@@ -233,19 +226,14 @@ class InfobloxClient:
     ) -> list[dict[str, Any]] | dict[str, Any]:
         params = dict(filters or {})
         params[INFOBLOX_JSON_RETURN_FIELDS] = INFOBLOX_LIST_RP_ZONE_PARAMS
-        return self.paged_request(
-            INFOBLOX_RP_ZONE_DETAILS_ENDPOINT,
-            params=params,
-            method="get",
-            allow_not_found=allow_not_found,
-        )
+        return self.paged_request(INFOBLOX_RP_ZONE_DETAILS_ENDPOINT, params=params, method="get", allow_not_found=allow_not_found)
 
     def use_session_cookie(self) -> None:
         """Retain the legacy ibapauth header used by RPZ create/delete calls."""
         self.session.headers.update({"ibapauth": self.session.cookies["ibapauth"]})
 
     def logout(self) -> None:
-        self.wapi_request(INFOBLOX_LOGOUT, method="post")
+        self.request(INFOBLOX_LOGOUT, method="post")
 
     def close(self) -> None:
         self.session.close()

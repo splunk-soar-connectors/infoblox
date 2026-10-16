@@ -16,36 +16,16 @@
 from soar_sdk.action_results import ActionOutput
 from soar_sdk.app import App
 
-from .block_domain import (
-    DomainOutput as BlockDomainOutput,
-    BlockDomainParams,
-    apply_table_column_metadata as apply_block_domain_column_metadata,
-    block_domain,
-)
-from .block_ip import (
-    BlockIpOutput,
-    BlockIpParams,
-    apply_table_column_metadata as apply_block_ip_column_metadata,
-    block_ip,
-)
+from .block_domain import BlockDomainParams, DomainOutput as BlockDomainOutput, block_domain
+from .block_ip import BlockIpOutput, BlockIpParams, block_ip
 from .get_network_info import GetNetworkInfoOutput, GetNetworkInfoParams, GetNetworkInfoSummary, get_network_info
-from .get_system_info import GetSystemInfoOutput, GetSystemInfoParams, GetSystemInfoSummary, apply_table_column_order, get_system_info
+from .get_system_info import GetSystemInfoOutput, GetSystemInfoParams, GetSystemInfoSummary, get_system_info
 from .list_hosts import ListHostsOutput, ListHostsParams, ListHostsSummary, list_hosts
 from .list_network_view import ListNetworkViewOutput, ListNetworkViewParams, ListNetworkViewSummary, list_network_view
 from .list_rpz import ListRpzOutput, ListRpzParams, ListRpzSummary, list_rpz
 from .make_request import make_request
-from .unblock_domain import (
-    DomainOutput as UnblockDomainOutput,
-    DomainRpzParams,
-    apply_table_column_metadata as apply_unblock_domain_column_metadata,
-    unblock_domain,
-)
-from .unblock_ip import (
-    BlockIpOutput as UnblockIpOutput,
-    IpRpzParams,
-    apply_table_column_metadata as apply_unblock_ip_column_metadata,
-    unblock_ip,
-)
+from .unblock_domain import DomainOutput as UnblockDomainOutput, DomainRpzParams, unblock_domain
+from .unblock_ip import BlockIpOutput as UnblockIpOutput, IpRpzParams, unblock_ip
 
 
 def register_actions(app: App) -> App:
@@ -75,7 +55,7 @@ def register_actions(app: App) -> App:
         summary_type=GetNetworkInfoSummary,
         render_as="table",
     )
-    get_system_info_action = app.register_action(
+    app.register_action(
         get_system_info,
         name="get system info",
         identifier="get_system_info",
@@ -88,8 +68,7 @@ def register_actions(app: App) -> App:
         summary_type=GetSystemInfoSummary,
         render_as="table",
     )
-    apply_table_column_order(get_system_info_action)
-    block_ip_action = app.register_action(
+    app.register_action(
         block_ip,
         name="block ip",
         identifier="block_ip",
@@ -102,8 +81,7 @@ def register_actions(app: App) -> App:
         summary_type=ActionOutput,
         render_as="table",
     )
-    apply_block_ip_column_metadata(block_ip_action)
-    unblock_ip_action = app.register_action(
+    app.register_action(
         unblock_ip,
         name="unblock ip",
         identifier="unblock_ip",
@@ -116,8 +94,7 @@ def register_actions(app: App) -> App:
         summary_type=ActionOutput,
         render_as="table",
     )
-    apply_unblock_ip_column_metadata(unblock_ip_action)
-    block_domain_action = app.register_action(
+    app.register_action(
         block_domain,
         name="block domain",
         identifier="block_domain",
@@ -130,8 +107,7 @@ def register_actions(app: App) -> App:
         summary_type=ActionOutput,
         render_as="table",
     )
-    apply_block_domain_column_metadata(block_domain_action)
-    unblock_domain_action = app.register_action(
+    app.register_action(
         unblock_domain,
         name="unblock domain",
         identifier="unblock_domain",
@@ -144,7 +120,6 @@ def register_actions(app: App) -> App:
         summary_type=ActionOutput,
         render_as="table",
     )
-    apply_unblock_domain_column_metadata(unblock_domain_action)
     app.register_action(
         list_rpz,
         name="list rpz",

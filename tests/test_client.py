@@ -49,9 +49,6 @@ class FakeSession:
             raise response
         return response
 
-    def request(self, method, url, **kwargs):
-        return self._call(method.lower(), url, **kwargs)
-
     def get(self, url, **kwargs):
         return self._call("get", url, **kwargs)
 
@@ -79,7 +76,7 @@ def test_request_preserves_url_auth_tls_and_timeout_contract():
     session = FakeSession([FakeResponse(200, [{"answer": 42, "enabled": False, "extra": None}])])
     client = InfobloxClient(Asset(), session=session)
 
-    response = client.wapi_request("/network", method="get", params={"network_view": "default"})
+    response = client.request("/network", method="get", params={"network_view": "default"})
 
     assert response.data == [{"answer": 42, "enabled": False, "extra": None}]
     method, url, kwargs = session.calls[0]
@@ -153,7 +150,7 @@ def test_http_error_uses_server_detail_and_maps_known_statuses():
         InfobloxApiError,
         match=r"API failed\nStatus code: 403\nDetail: Read denied",
     ):
-        client.wapi_request("/network", method="get")
+        client.request("/network", method="get")
 
 
 def test_unknown_http_error_keeps_legacy_fallback():
@@ -163,7 +160,7 @@ def test_unknown_http_error_keeps_legacy_fallback():
         InfobloxApiError,
         match=r"API failed\nStatus code: 418\nDetail: Unknown error occurred",
     ):
-        client.wapi_request("/network", method="get")
+        client.request("/network", method="get")
 
 
 def test_list_rpz_404_is_returned_as_action_specific_data():
@@ -181,7 +178,7 @@ def test_non_json_response_preserves_parse_error_behavior():
         session=FakeSession([FakeResponse(200, {"ignored": True}, headers={"Content-Type": "text/plain"})]),
     )
 
-    response = client.wapi_request("/network", method="get")
+    response = client.request("/network", method="get")
     assert response.data is None
 
 
