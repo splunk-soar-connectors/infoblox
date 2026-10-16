@@ -14,12 +14,14 @@
 """Splunk SOAR SDK application entry point for Infoblox DDI."""
 
 from soar_sdk.abstract import SOARClient
+from soar_sdk.actions_manager import ActionsManager
 from soar_sdk.app import App
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.logging import getLogger
 from soar_sdk.params import Params
 
 from .actions import register_actions
+from .actions.common import is_ip
 from .actions.connectivity import _test_connectivity_handler
 from .asset import Asset
 from .infoblox_client import InfobloxApiError, InfobloxClient, exception_message
@@ -27,6 +29,18 @@ from .legacy_metadata import apply_legacy_output_metadata
 
 
 logger = getLogger()
+
+
+class InfobloxActionsManager(ActionsManager):
+    """Register the Infoblox IP validator before SOAR validates action inputs."""
+
+    def initialize(self) -> bool:
+        # SOAR's BaseConnector provides set_validator at runtime. The SDK's local
+        # shim does not, so keep local imports and CLI use available without it.
+        set_validator = getattr(self, "set_validator", None)
+        if callable(set_validator):
+            set_validator("ip", is_ip)
+        return super().initialize()
 
 
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
@@ -72,6 +86,7 @@ def create_infoblox_app() -> App:
         fips_compliant=False,
         asset_cls=Asset,
     )
+    app.actions_manager = InfobloxActionsManager()
     register_actions(app)
     app.test_connectivity()(test_connectivity)
     apply_legacy_output_metadata(app)
