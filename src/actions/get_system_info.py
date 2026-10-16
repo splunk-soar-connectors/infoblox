@@ -16,11 +16,10 @@
 import time
 from typing import Any
 
-from pydantic import model_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
 from soar_sdk.meta.actions import ActionMeta
-from soar_sdk.params import Param, Params
+from soar_sdk.params import Param
 from soar_sdk.types import Action
 
 from ..asset import Asset
@@ -59,7 +58,7 @@ from ..consts import (
     INFOBLOX_RECORDS_IPv6_ENDPOINT,
 )
 from ..infoblox_client import InfobloxClient
-from .common import is_address, is_ipv6, run_action
+from .common import NetworkViewParams, is_address, is_ipv6, run_action
 
 
 _TABLE_COLUMN_ORDERS = {
@@ -94,7 +93,7 @@ def apply_table_column_order(action: Action) -> None:
     action.meta = GetSystemInfoMeta(**{name: getattr(meta, name) for name in ActionMeta.model_fields})
 
 
-class GetSystemInfoParams(Params):
+class GetSystemInfoParams(NetworkViewParams):
     ip_hostname: str = Param(
         description="IP/Hostname",
         required=True,
@@ -108,14 +107,6 @@ class GetSystemInfoParams(Params):
         cef_types=["infoblox view"],
         column_name="Network View",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _default_network_view_when_omitted(cls, values: Any) -> Any:
-        """Use the legacy default only when network_view was not provided."""
-        if isinstance(values, dict) and "network_view" not in values:
-            return {**values, "network_view": INFOBLOX_NETWORK_VIEW_DEFAULT}
-        return values
 
 
 class GetSystemInfoOutput(ActionOutput):

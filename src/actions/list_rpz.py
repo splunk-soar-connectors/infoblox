@@ -16,10 +16,9 @@
 import time
 from typing import Any
 
-from pydantic import model_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
-from soar_sdk.params import Param, Params
+from soar_sdk.params import Param
 
 from ..asset import Asset
 from ..consts import (
@@ -32,24 +31,16 @@ from ..consts import (
     INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES,
 )
 from ..infoblox_client import InfobloxClient
-from .common import run_action
+from .common import NetworkViewParams, run_action
 
 
-class ListRpzParams(Params):
+class ListRpzParams(NetworkViewParams):
     network_view: str | None = Param(
         description="Network view",
         default=INFOBLOX_NETWORK_VIEW_DEFAULT,
         primary=True,
         cef_types=["infoblox view"],
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def _default_network_view_when_omitted(cls, values: Any) -> Any:
-        """Use the legacy default only when network_view was not provided."""
-        if isinstance(values, dict) and "network_view" not in values:
-            return {**values, "network_view": INFOBLOX_NETWORK_VIEW_DEFAULT}
-        return values
 
 
 class ListRpzOutput(ActionOutput):

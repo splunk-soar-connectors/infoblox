@@ -17,8 +17,8 @@ from soar_sdk.action_results import ActionOutput
 from soar_sdk.app import App
 
 from .block_domain import (
+    DomainOutput as BlockDomainOutput,
     BlockDomainParams,
-    BlockDomainOutput,
     apply_table_column_metadata as apply_block_domain_column_metadata,
     block_domain,
 )
@@ -35,14 +35,14 @@ from .list_network_view import ListNetworkViewOutput, ListNetworkViewParams, Lis
 from .list_rpz import ListRpzOutput, ListRpzParams, ListRpzSummary, list_rpz
 from .make_request import make_request
 from .unblock_domain import (
-    UnblockDomainOutput,
-    UnblockDomainParams,
+    DomainOutput as UnblockDomainOutput,
+    DomainRpzParams,
     apply_table_column_metadata as apply_unblock_domain_column_metadata,
     unblock_domain,
 )
 from .unblock_ip import (
-    UnblockIpOutput,
-    UnblockIpParams,
+    BlockIpOutput as UnblockIpOutput,
+    IpRpzParams,
     apply_table_column_metadata as apply_unblock_ip_column_metadata,
     unblock_ip,
 )
@@ -111,7 +111,7 @@ def register_actions(app: App) -> App:
         verbose="This action uses a multistep approach to unblock the IP:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block IP Address (No Such Domain)' with the specified IP address.</ul>Default value for <b>network_view</b> is 'default'.",
         action_type="correct",
         read_only=False,
-        params_class=UnblockIpParams,
+        params_class=IpRpzParams,
         output_class=UnblockIpOutput,
         summary_type=ActionOutput,
         render_as="table",
@@ -139,7 +139,7 @@ def register_actions(app: App) -> App:
         verbose="This action uses a multistep approach to unblock the domain:<ul><li>Check if RPZ exists with policy override 'None(GIVEN)'. If not, action will fail.</li><li>Remove the RPZ rule 'Block Domain Name (No Such Domain)' with the specified domain.</ul>Default value for <b>network_view</b> is 'default'.",
         action_type="correct",
         read_only=False,
-        params_class=UnblockDomainParams,
+        params_class=DomainRpzParams,
         output_class=UnblockDomainOutput,
         summary_type=ActionOutput,
         render_as="table",

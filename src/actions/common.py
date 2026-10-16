@@ -15,20 +15,31 @@
 
 import ipaddress
 import socket
-from collections.abc import Callable
 from typing import Any
 
+from pydantic import model_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, ActionResult
 from soar_sdk.logging import getLogger
 from soar_sdk.params import Params
 
 from ..asset import Asset
-from ..consts import INFOBLOX_IP_VALIDATION_FAILED
+from ..consts import INFOBLOX_IP_VALIDATION_FAILED, INFOBLOX_NETWORK_VIEW_DEFAULT
 from ..infoblox_client import InfobloxApiError, InfobloxClient, exception_message
 
 
 logger = getLogger()
+
+
+class NetworkViewParams(Params):
+    """Apply the legacy network_view default only when the input is omitted."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_network_view_when_omitted(cls, values: Any) -> Any:
+        if isinstance(values, dict) and "network_view" not in values:
+            return {**values, "network_view": INFOBLOX_NETWORK_VIEW_DEFAULT}
+        return values
 
 
 def is_ipv6(value: str) -> bool:
@@ -98,12 +109,11 @@ def run_action(
     asset: Asset,
     soar: SOARClient,
     summary_type: type[ActionOutput],
-    handler: Callable[..., dict[str, Any]],
-    **handler_kwargs: Any,
+    handler: Any,
 ) -> ActionResult:
     client = InfobloxClient(asset)
     try:
-        outcome = handler(client, params, **handler_kwargs)
+        outcome = handler(client, params)
     except InfobloxApiError as error:
         outcome = {
             "success": False,
