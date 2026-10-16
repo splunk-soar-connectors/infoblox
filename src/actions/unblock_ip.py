@@ -15,20 +15,22 @@
 
 from typing import Any
 
+from pydantic import model_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
 from soar_sdk.meta.actions import ActionMeta
-from soar_sdk.params import Param
+from soar_sdk.params import Param, Params
 from soar_sdk.types import Action
 
 from ..asset import Asset
 from ..consts import INFOBLOX_IP_VALIDATION_FAILED, INFOBLOX_NETWORK_VIEW_DEFAULT
-from ..infoblox_client import InfobloxClient
-from .common import NetworkViewParams, action_result, is_ip, run_action
+from .common import action_result, is_ip, run_action
 from .rpz import ip_rule_action
 
 
-class IpRpzParams(NetworkViewParams):
+class UnblockIpParams(Params):
+    """Inputs for unblocking an IP in an Infoblox response policy zone."""
+
     ip: str = Param(
         description="IP/CIDR to unblock",
         required=True,
@@ -51,8 +53,16 @@ class IpRpzParams(NetworkViewParams):
         column_name="Network View",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _default_network_view_when_omitted(cls, values: Any) -> Any:
+        """Use the legacy default only when network_view was not provided."""
+        if isinstance(values, dict) and "network_view" not in values:
+            return {**values, "network_view": INFOBLOX_NETWORK_VIEW_DEFAULT}
+        return values
 
-class BlockIpOutput(ActionOutput):
+
+class UnblockIpOutput(ActionOutput):
     reference_link: str | None = OutputField(
         example_values=["record:rpz:cname:ipaddress/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5.test_zone/default"]
     )
@@ -77,11 +87,7 @@ def apply_table_column_metadata(action: Action) -> None:
     action.meta = UnblockIpMeta(**{name: getattr(meta, name) for name in ActionMeta.model_fields})
 
 
-def _unblock_ip_handler(client: InfobloxClient, params: IpRpzParams) -> dict[str, Any]:
-    return ip_rule_action(client, params, block=False)
-
-
-def unblock_ip(params: IpRpzParams, soar: SOARClient, asset: Asset):
+def unblock_ip(params: UnblockIpParams, soar: SOARClient, asset: Asset):
     if not is_ip(params.ip):
         return action_result(
             params,
@@ -90,4 +96,11 @@ def unblock_ip(params: IpRpzParams, soar: SOARClient, asset: Asset):
             success=False,
             message=INFOBLOX_IP_VALIDATION_FAILED,
         )
-    return run_action(params, asset, soar, ActionOutput, _unblock_ip_handler)
+    return run_action(
+        params,
+        asset,
+        soar,
+        ActionOutput,
+        ip_rule_action,
+        block=False,
+    )

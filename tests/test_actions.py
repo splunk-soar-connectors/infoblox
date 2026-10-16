@@ -32,8 +32,8 @@ from src.actions.list_hosts import ListHostsParams
 from src.actions.list_network_view import ListNetworkViewParams
 from src.actions.list_rpz import ListRpzParams
 from src.actions.make_request import InfobloxMakeRequestParams
-from src.actions.unblock_domain import DomainRpzParams
-from src.actions.unblock_ip import IpRpzParams, unblock_ip
+from src.actions.unblock_domain import UnblockDomainParams
+from src.actions.unblock_ip import UnblockIpParams, unblock_ip
 from src.asset import Asset
 from src.consts import INFOBLOX_HOST_INFO_UNAVAILABLE, INFOBLOX_JSON_DATE_FORMAT
 from src.infoblox_client import InfobloxApiError
@@ -294,7 +294,7 @@ def test_get_network_info_filters_host_address_without_losing_structures(monkeyp
     ("params_class", "required_values", "action"),
     [
         (GetNetworkInfoParams, {}, get_network_info),
-        (IpRpzParams, {"rp_zone": "block.example"}, unblock_ip),
+        (UnblockIpParams, {"rp_zone": "block.example"}, unblock_ip),
         (BlockIpParams, {"rp_zone": "block.example"}, block_ip),
     ],
 )
@@ -489,14 +489,14 @@ def test_get_system_info_preserves_explicitly_empty_network_view(monkeypatch):
 def test_rpz_actions_preserve_explicitly_empty_network_view(monkeypatch):
     cases = [
         ("block_ip", BlockIpParams(ip="10.0.0.5", rp_zone="block.example", network_view="")),
-        ("unblock_ip", IpRpzParams(ip="10.0.0.5", rp_zone="block.example", network_view="")),
+        ("unblock_ip", UnblockIpParams(ip="10.0.0.5", rp_zone="block.example", network_view="")),
         (
             "block_domain",
             BlockDomainParams(domain="example.com", rp_zone="block.example", network_view=""),
         ),
         (
             "unblock_domain",
-            DomainRpzParams(domain="example.com", rp_zone="block.example", network_view=""),
+            UnblockDomainParams(domain="example.com", rp_zone="block.example", network_view=""),
         ),
     ]
 
@@ -591,7 +591,7 @@ def test_unblock_ip_already_unblocked_message_and_api_error_message(monkeypatch)
     client.wapi_request = lambda *args, **kwargs: requests.append((args, kwargs)) or ApiResponse([])
     monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
     soar = FakeSoar()
-    params = IpRpzParams(ip="10.0.0.5", rp_zone="block.example")
+    params = UnblockIpParams(ip="10.0.0.5", rp_zone="block.example")
 
     before = len(sdk.app.actions_manager.get_results())
     assert sdk.app.actions_manager.get_action("unblock_ip")(params, soar=soar, asset=make_asset()) is True
@@ -823,7 +823,7 @@ def test_unblock_domain_already_unblocked_uses_legacy_message_and_cookie(monkeyp
     requests = []
     client.wapi_request = lambda *args, **kwargs: requests.append((args, kwargs)) or ApiResponse([])
     monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
-    params = DomainRpzParams(domain="example.com", rp_zone="block.example")
+    params = UnblockDomainParams(domain="example.com", rp_zone="block.example")
     before = len(sdk.app.actions_manager.get_results())
 
     assert sdk.app.actions_manager.get_action("unblock_domain")(params, soar=FakeSoar(), asset=make_asset()) is True
