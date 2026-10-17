@@ -18,29 +18,35 @@ from soar_sdk.actions_manager import ActionsManager
 from soar_sdk.app import App
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.logging import getLogger
-from soar_sdk.params import Params
 
 from .actions import register_actions
 from .actions.common import is_ip
-from .actions.connectivity import _test_connectivity_handler
 from .asset import Asset
+from .consts import (
+    DEFAULT_REQUEST_TIMEOUT,
+    INFOBLOX_JSON_MESSAGE,
+    INFOBLOX_JSON_SUCCESS,
+    INFOBLOX_TEST_CONN_FAILED,
+    INFOBLOX_TEST_CONN_SUCCESS,
+    INFOBLOX_TEST_ENDPOINT,
+)
 from .infoblox_client import InfobloxApiError, InfobloxClient, exception_message
-from .legacy_metadata import apply_legacy_output_metadata
 
 
 logger = getLogger()
 
 
 class InfobloxActionsManager(ActionsManager):
-    """Register the Infoblox IP validator before SOAR validates action inputs."""
+    """Register Infoblox's IP validator before SOAR validates action inputs."""
 
     def initialize(self) -> bool:
-        # SOAR's BaseConnector provides set_validator at runtime. The SDK's local
-        # shim does not, so keep local imports and CLI use available without it.
+        result = super().initialize()
+        # set_validator is provided by the SOAR runtime's BaseConnector. The SDK
+        # shim used outside SOAR does not expose it.
         set_validator = getattr(self, "set_validator", None)
         if callable(set_validator):
             set_validator("ip", is_ip)
-        return super().initialize()
+        return result
 
 
 def test_connectivity(soar: SOARClient, asset: Asset) -> None:
@@ -48,12 +54,17 @@ def test_connectivity(soar: SOARClient, asset: Asset) -> None:
     logger.progress("Logging into device")
     client = InfobloxClient(asset)
     try:
-        outcome = _test_connectivity_handler(client, Params())
+        try:
+            client.wapi_request(INFOBLOX_TEST_ENDPOINT, method="get", timeout=DEFAULT_REQUEST_TIMEOUT)
+        except InfobloxApiError:
+            outcome = {INFOBLOX_JSON_SUCCESS: False, INFOBLOX_JSON_MESSAGE: INFOBLOX_TEST_CONN_FAILED}
+        else:
+            outcome = {INFOBLOX_JSON_SUCCESS: True, INFOBLOX_JSON_MESSAGE: INFOBLOX_TEST_CONN_SUCCESS}
     except Exception as error:
         logger.exception("Unexpected Infoblox connectivity failure")
         outcome = {
-            "success": False,
-            "message": f"Exception occurred. {exception_message(error)}",
+            INFOBLOX_JSON_SUCCESS: False,
+            INFOBLOX_JSON_MESSAGE: f"Exception occurred. {exception_message(error)}",
         }
 
     try:
@@ -89,7 +100,6 @@ def create_infoblox_app() -> App:
     app.actions_manager = InfobloxActionsManager()
     register_actions(app)
     app.test_connectivity()(test_connectivity)
-    apply_legacy_output_metadata(app)
     return app
 
 
