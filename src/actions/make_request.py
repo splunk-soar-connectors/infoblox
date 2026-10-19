@@ -17,7 +17,7 @@ import json
 from typing import Any
 from urllib.parse import parse_qsl, unquote, urlsplit
 
-import requests
+import httpx
 from soar_sdk.action_results import MakeRequestOutput
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import MakeRequestParams, Param
@@ -150,7 +150,7 @@ def make_request(params: InfobloxMakeRequestParams, asset: Asset) -> MakeRequest
             status_code=response.status_code,
             response_body=response.text,
         )
-    except requests.RequestException as error:
+    except httpx.RequestError as error:
         raise ActionFailure(f"Connection failed. {exception_message(error)}") from error
     finally:
         client.close()

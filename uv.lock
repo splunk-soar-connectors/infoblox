@@ -461,7 +461,7 @@ name = "infobloxddi"
 version = "2.1.7"
 source = { virtual = "." }
 dependencies = [
-    { name = "requests" },
+    { name = "httpx" },
     { name = "splunk-soar-sdk" },
 ]
 
@@ -479,7 +479,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "requests", specifier = ">=2.31,<3" },
+    { name = "httpx", specifier = ">=0.27,<1" },
     { name = "splunk-soar-sdk", specifier = "==6.1.3" },
 ]
 

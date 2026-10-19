@@ -18,7 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import requests
+import httpx
 from soar_sdk.logging import getLogger
 
 from .consts import (
@@ -78,13 +78,14 @@ def exception_message(error: Exception) -> str:
 
 
 class InfobloxClient:
-    """Thin requests wrapper preserving the legacy WAPI transport contract."""
+    """Thin HTTPX wrapper preserving the legacy WAPI transport contract."""
 
-    def __init__(self, asset: Any, session: requests.Session | None = None) -> None:
+    def __init__(self, asset: Any, session: httpx.Client | None = None) -> None:
         self.base_url = f"{asset.url.rstrip('/')}{INFOBLOX_BASE_ENDPOINT}"
         self.auth = (asset.username, asset.password)
         self.verify_ssl = asset.verify_server_cert if asset.verify_server_cert is not None else True
-        self.session = session or requests.Session()
+        # Requests has no default timeout and follows redirects for each request.
+        self.session = session or httpx.Client(verify=self.verify_ssl, timeout=None, follow_redirects=True)
 
     def request(
         self,
@@ -96,7 +97,7 @@ class InfobloxClient:
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
         verify_ssl: bool | None = None,
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Send an authenticated HTTP request to a relative WAPI endpoint."""
         if getattr(self.session, method.lower(), None) is None:
             raise InfobloxApiError(f"Unsupported method {method}")
@@ -105,14 +106,30 @@ class InfobloxClient:
             "auth": self.auth,
             "params": params,
             "data": data,
-            "verify": self.verify_ssl if verify_ssl is None else verify_ssl,
         }
         if headers is not None:
             request_kwargs["headers"] = headers
         if timeout is not None:
             request_kwargs["timeout"] = timeout
 
-        return self.session.request(method.upper(), f"{self.base_url}{endpoint}", **request_kwargs)
+        # HTTPX configures TLS verification on the client, while make_request
+        # allows an action-level override. Use a short-lived client only when
+        # that override differs, carrying the existing session headers/cookies
+        # across so WAPI authentication remains consistent.
+        request_verify = self.verify_ssl if verify_ssl is None else verify_ssl
+        if request_verify == self.verify_ssl:
+            return self.session.request(method.upper(), f"{self.base_url}{endpoint}", **request_kwargs)
+
+        with httpx.Client(
+            verify=request_verify,
+            timeout=None,
+            follow_redirects=True,
+            headers=self.session.headers,
+        ) as override_session:
+            override_session.cookies.update(self.session.cookies)
+            response = override_session.request(method.upper(), f"{self.base_url}{endpoint}", **request_kwargs)
+            self.session.cookies.update(override_session.cookies)
+            return response
 
     def wapi_request(
         self,

@@ -88,8 +88,8 @@ def test_request_preserves_url_auth_tls_and_timeout_contract():
         "auth": ("api-user", "pwd"),
         "params": {"network_view": "default"},
         "data": None,
-        "verify": False,
     }
+    assert client.verify_ssl is False
 
 
 def test_verify_server_cert_is_optional_and_defaults_to_verification():
@@ -102,6 +102,37 @@ def test_verify_server_cert_is_optional_and_defaults_to_verification():
     client = InfobloxClient(config)
     assert client.verify_ssl is True
     client.close()
+
+
+def test_action_tls_override_uses_a_client_with_requested_verification(monkeypatch):
+    created_clients = []
+
+    class OverrideSession(FakeSession):
+        def __init__(self, *, verify, timeout, follow_redirects, headers):
+            super().__init__([FakeResponse(200, {})])
+            self.verify = verify
+            self.headers = headers
+            self.cookies = {}
+            self.options = (timeout, follow_redirects)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            self.close()
+
+    def client_factory(**kwargs):
+        client = OverrideSession(**kwargs)
+        created_clients.append(client)
+        return client
+
+    monkeypatch.setattr("src.infoblox_client.httpx.Client", client_factory)
+    client = InfobloxClient(Asset(), session=FakeSession([]))
+
+    client.request("/network", method="get", verify_ssl=True)
+
+    assert created_clients[0].verify is True
+    assert created_clients[0].options == (None, True)
 
 
 def test_paged_request_combines_results_and_keeps_page_query_shape():
