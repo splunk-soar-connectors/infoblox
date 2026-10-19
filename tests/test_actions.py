@@ -129,6 +129,18 @@ def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook
 def test_action_parameters_and_output_schema_match_legacy_contract():
     legacy = json.loads((ROOT / "tests/fixtures/legacy-infoblox-manifest.json").read_text())
     actions = sdk.app.get_actions()
+    # These CEF mappings intentionally extend legacy metadata so Infoblox IP
+    # actions can match IPv6 and CIDR values in playbooks as well as IPv4.
+    cef_type_overrides = {
+        ("block_ip", "action_result.parameter.ip"): ["ip", "ipv6", "cidr"],
+        ("unblock_ip", "action_result.parameter.ip"): ["ip", "ipv6", "cidr"],
+        ("get_network_info", "action_result.parameter.ip"): ["ip", "ipv6", "cidr"],
+        ("get_network_info", "action_result.data.*.network"): ["ip", "ipv6", "cidr"],
+        ("get_system_info", "action_result.parameter.ip_hostname"): ["ip", "ipv6", "host name"],
+        ("get_system_info", "action_result.data.*.address"): ["ip", "ipv6"],
+        ("get_system_info", "action_result.data.*.served_by"): ["ip", "ipv6"],
+        ("list_hosts", "action_result.data.*.ip"): ["ip", "ipv6"],
+    }
     for legacy_action in legacy["actions"]:
         if legacy_action["identifier"] == "test_asset_connectivity":
             continue  # The SDK app-level connectivity hook replaces this legacy action.
@@ -165,7 +177,11 @@ def test_action_parameters_and_output_schema_match_legacy_contract():
         for path, legacy_field in legacy_output.items():
             sdk_field = sdk_output[path]
             assert sdk_field["data_type"] == legacy_field["data_type"], path
-            assert sdk_field.get("contains", []) == legacy_field.get("contains", []), path
+            expected_contains = cef_type_overrides.get(
+                (legacy_action["identifier"], path),
+                legacy_field.get("contains", []),
+            )
+            assert sdk_field.get("contains", []) == expected_contains, path
             # SDK-reserved status/message metadata and Param examples cannot be
             # configured in the action models; examples for action outputs are.
             if path not in {"action_result.status", "action_result.message"} and not path.startswith("action_result.parameter."):

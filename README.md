@@ -75,7 +75,7 @@ Get network information for an IP or IP range (in CIDR notation). If an IP is no
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip** | optional | IP or IP network (CIDR notation) | string | |
+**ip** | optional | IP or IP network (CIDR notation) | string | `ip` `ipv6` `cidr` |
 **network_view** | optional | Network view | string | `infoblox view` |
 
 #### Action Output
@@ -84,10 +84,10 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | |
-action_result.parameter.ip | string | | |
+action_result.parameter.ip | string | `ip` `ipv6` `cidr` | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.data.\*.\_ref | string | | range/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.1/10.254.254.254/Internal%20Networks |
-action_result.data.\*.network | string | `ip` | 10.0.0.0/8 |
+action_result.data.\*.network | string | `ip` `ipv6` `cidr` | 10.0.0.0/8 |
 action_result.data.\*.network_view | string | `infoblox view` | Internal Networks |
 action_result.data.\*.comment | string | | Example of a comment |
 action_result.summary.number_of_matching_networks | numeric | | 1 |
@@ -107,7 +107,7 @@ Default value for <b>network_view</b> is 'default'. This action will not fetch s
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip_hostname** | required | IP/Hostname | string | `host name` |
+**ip_hostname** | required | IP/Hostname | string | `ip` `ipv6` `host name` |
 **network_view** | optional | Network view | string | `infoblox view` |
 
 #### Action Output
@@ -116,9 +116,9 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | |
-action_result.parameter.ip_hostname | string | `host name` | |
+action_result.parameter.ip_hostname | string | `ip` `ipv6` `host name` | |
 action_result.parameter.network_view | string | `infoblox view` | |
-action_result.data.\*.address | string | `ip` | 10.0.0.5 |
+action_result.data.\*.address | string | `ip` `ipv6` | 10.0.0.5 |
 action_result.data.\*.client_hostname | string | `host name` | |
 action_result.data.\*.server_host_name | string | `host name` | test-01.lab.test.local |
 action_result.data.\*.os | string | | Linux |
@@ -145,7 +145,7 @@ action_result.data.\*.on_release | string | | |
 action_result.data.\*.option | string | | |
 action_result.data.\*.protocol | string | | IPV4 |
 action_result.data.\*.remote_id | string | | |
-action_result.data.\*.served_by | string | `ip` | 10.0.0.7 |
+action_result.data.\*.served_by | string | `ip` `ipv6` | 10.0.0.7 |
 action_result.data.\*.tsfp | string | | 1504274705 |
 action_result.data.\*.tstp | string | | 1504274905 |
 action_result.data.\*.uid | string | | |
@@ -171,7 +171,7 @@ This action blocks the IP by creating an appropriate RPZ. It blocks the domain b
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip** | required | IP/CIDR to block | string | |
+**ip** | required | IP/CIDR to block | string | `ip` `ipv6` `cidr` |
 **rp_zone** | required | FQDN of response policy zone | string | `infoblox rpz` |
 **network_view** | optional | Network view | string | `infoblox view` |
 **comment** | optional | Comment (maximum 256 characters) | string | |
@@ -182,7 +182,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | IP/CIDR blocked successfully |
-action_result.parameter.ip | string | | |
+action_result.parameter.ip | string | `ip` `ipv6` `cidr` | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.parameter.comment | string | | |
@@ -203,7 +203,7 @@ This action uses a multistep approach to unblock the IP:<ul><li>Check if RPZ exi
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip** | required | IP/CIDR to unblock | string | |
+**ip** | required | IP/CIDR to unblock | string | `ip` `ipv6` `cidr` |
 **rp_zone** | required | FQDN of response policy zone | string | `infoblox rpz` |
 **network_view** | optional | Network view | string | `infoblox view` |
 
@@ -213,7 +213,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | IP/CIDR unblocked successfully |
-action_result.parameter.ip | string | | |
+action_result.parameter.ip | string | `ip` `ipv6` `cidr` | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.data.\*.reference_link | string | | record:rpz:cname:ipaddress/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5.test_zone/default |
@@ -338,7 +338,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | |
-action_result.data.\*.ip | string | `ip` | 10.0.0.5 |
+action_result.data.\*.ip | string | `ip` `ipv6` | 10.0.0.5 |
 action_result.data.\*.name | string | `host name` | test |
 action_result.data.\*.view | string | `infoblox view` | External DNS |
 action_result.data.\*.zone | string | | example.com |
