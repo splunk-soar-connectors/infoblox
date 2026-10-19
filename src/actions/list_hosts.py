@@ -45,7 +45,7 @@ class DiscoveredDataOutput(ActionOutput):
 
 
 class ListHostsOutput(ActionOutput):
-    ip: str | None = OutputField(cef_types=["ip"], example_values=["10.0.0.5"], column_name="IP")
+    ip: str | None = OutputField(cef_types=["ip", "ipv6"], example_values=["10.0.0.5"], column_name="IP")
     name: str | None = OutputField(cef_types=["host name"], example_values=["test"], column_name="Host Name")
     view: str | None = OutputField(
         cef_types=["infoblox view"],

@@ -99,7 +99,7 @@ class GetSystemInfoParams(Params):
         description="IP/Hostname",
         required=True,
         primary=True,
-        cef_types=["host name"],
+        cef_types=["ip", "ipv6", "host name"],
     )
     network_view: str | None = Param(
         description="Network view",
@@ -120,7 +120,7 @@ class GetSystemInfoParams(Params):
 
 class GetSystemInfoOutput(ActionOutput):
     # Declare table fields in legacy column order. Other raw WAPI fields follow.
-    address: str | None = OutputField(cef_types=["ip"], example_values=["10.0.0.5"], column_name="Host IP")
+    address: str | None = OutputField(cef_types=["ip", "ipv6"], example_values=["10.0.0.5"], column_name="Host IP")
     client_hostname: str | None = OutputField(cef_types=["host name"], column_name="Client Host Name")
     server_host_name: str | None = OutputField(
         cef_types=["host name"],
@@ -157,7 +157,7 @@ class GetSystemInfoOutput(ActionOutput):
     option: str | None = None
     protocol: str | None = OutputField(example_values=["IPV4"])
     remote_id: str | None = None
-    served_by: str | None = OutputField(cef_types=["ip"], example_values=["10.0.0.7"], column_name="Served By")
+    served_by: str | None = OutputField(cef_types=["ip", "ipv6"], example_values=["10.0.0.7"], column_name="Served By")
     tsfp: str | None = OutputField(example_values=["1504274705"])
     tstp: str | None = OutputField(example_values=["1504274905"])
     uid: str | None = None

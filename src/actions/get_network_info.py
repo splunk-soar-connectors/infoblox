@@ -36,6 +36,7 @@ class GetNetworkInfoParams(Params):
         description="IP or IP network (CIDR notation)",
         required=False,
         primary=True,
+        cef_types=["ip", "ipv6", "cidr"],
     )
     network_view: str | None = Param(
         description="Network view",
@@ -51,7 +52,7 @@ class GetNetworkInfoOutput(ActionOutput):
         example_values=["range/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.1/10.254.254.254/Internal%20Networks"],
     )
     network: str | None = OutputField(
-        cef_types=["ip"],
+        cef_types=["ip", "ipv6", "cidr"],
         example_values=["10.0.0.0/8"],
         column_name="Network",
     )

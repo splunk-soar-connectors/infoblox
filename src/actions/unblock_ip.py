@@ -35,6 +35,7 @@ class UnblockIpParams(Params):
         description="IP/CIDR to unblock",
         required=True,
         primary=True,
+        cef_types=["ip", "ipv6", "cidr"],
         column_name="IP",
     )
     rp_zone: str = Param(
