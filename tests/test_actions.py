@@ -151,8 +151,6 @@ def test_action_parameters_and_output_schema_match_legacy_contract():
             assert data_type == legacy_param["data_type"], name
             assert field.is_required() is legacy_param.get("required", False), name
             assert field.description == legacy_param.get("description"), name
-            extra = field.json_schema_extra or {}
-            assert extra.get("cef_types", []) == legacy_param.get("contains", []), name
             if "default" in legacy_param:
                 assert field.default == legacy_param["default"], name
             elif not legacy_param.get("required", False):

@@ -75,7 +75,7 @@ Get network information for an IP or IP range (in CIDR notation). If an IP is no
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip** | optional | IP or IP network (CIDR notation) | string | `ip` |
+**ip** | optional | IP or IP network (CIDR notation) | string | |
 **network_view** | optional | Network view | string | `infoblox view` |
 
 #### Action Output
@@ -84,7 +84,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | |
-action_result.parameter.ip | string | `ip` | |
+action_result.parameter.ip | string | | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.data.\*.\_ref | string | | range/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.1/10.254.254.254/Internal%20Networks |
 action_result.data.\*.network | string | `ip` | 10.0.0.0/8 |
@@ -107,7 +107,7 @@ Default value for <b>network_view</b> is 'default'. This action will not fetch s
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip_hostname** | required | IP/Hostname | string | `ip` `host name` |
+**ip_hostname** | required | IP/Hostname | string | `host name` |
 **network_view** | optional | Network view | string | `infoblox view` |
 
 #### Action Output
@@ -116,7 +116,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | |
-action_result.parameter.ip_hostname | string | `ip` `host name` | |
+action_result.parameter.ip_hostname | string | `host name` | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.data.\*.address | string | `ip` | 10.0.0.5 |
 action_result.data.\*.client_hostname | string | `host name` | |
@@ -171,7 +171,7 @@ This action blocks the IP by creating an appropriate RPZ. It blocks the domain b
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip** | required | IP/CIDR to block | string | `ip` |
+**ip** | required | IP/CIDR to block | string | |
 **rp_zone** | required | FQDN of response policy zone | string | `infoblox rpz` |
 **network_view** | optional | Network view | string | `infoblox view` |
 **comment** | optional | Comment (maximum 256 characters) | string | |
@@ -182,7 +182,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | IP/CIDR blocked successfully |
-action_result.parameter.ip | string | `ip` | |
+action_result.parameter.ip | string | | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.parameter.comment | string | | |
@@ -203,7 +203,7 @@ This action uses a multistep approach to unblock the IP:<ul><li>Check if RPZ exi
 
 PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 --------- | -------- | ----------- | ---- | --------
-**ip** | required | IP/CIDR to unblock | string | `ip` |
+**ip** | required | IP/CIDR to unblock | string | |
 **rp_zone** | required | FQDN of response policy zone | string | `infoblox rpz` |
 **network_view** | optional | Network view | string | `infoblox view` |
 
@@ -213,7 +213,7 @@ DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
 action_result.message | string | | IP/CIDR unblocked successfully |
-action_result.parameter.ip | string | `ip` | |
+action_result.parameter.ip | string | | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
 action_result.data.\*.reference_link | string | | record:rpz:cname:ipaddress/AA1aAa1aaAaa1Aa1aAaAA1aAa1aaAaa1Aa1aAa:10.0.0.5.test_zone/default |

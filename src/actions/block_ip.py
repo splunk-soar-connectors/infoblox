@@ -35,7 +35,6 @@ class BlockIpParams(Params):
         description="IP/CIDR to block",
         required=True,
         primary=True,
-        cef_types=["ip"],
         column_name="IP",
     )
     rp_zone: str = Param(

@@ -99,7 +99,7 @@ class GetSystemInfoParams(Params):
         description="IP/Hostname",
         required=True,
         primary=True,
-        cef_types=["ip", "host name"],
+        cef_types=["host name"],
     )
     network_view: str | None = Param(
         description="Network view",

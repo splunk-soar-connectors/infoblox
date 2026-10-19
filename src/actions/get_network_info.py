@@ -36,7 +36,6 @@ class GetNetworkInfoParams(Params):
         description="IP or IP network (CIDR notation)",
         required=False,
         primary=True,
-        cef_types=["ip"],
     )
     network_view: str | None = Param(
         description="Network view",
