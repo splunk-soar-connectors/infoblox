@@ -15,7 +15,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+import httpx
 import pytest
+from soar_sdk.auth import BasicAuth
 
 from src.asset import Asset as SoarAsset
 from src.infoblox_client import InfobloxApiError, InfobloxClient
@@ -84,8 +86,12 @@ def test_request_preserves_url_auth_tls_and_timeout_contract():
     assert response.data == [{"answer": 42, "enabled": False, "extra": None}]
     method, url, kwargs = session.calls[0]
     assert (method, url) == ("get", "https://grid.example/wapi/v2.3.1/network")
+    auth = kwargs.pop("auth")
+    assert isinstance(auth, BasicAuth)
+    request = next(auth.auth_flow(httpx.Request(method, url)))
+    expected_request = next(httpx.BasicAuth(Asset.username, Asset.password).auth_flow(httpx.Request(method, url)))
+    assert request.headers["Authorization"] == expected_request.headers["Authorization"]
     assert kwargs == {
-        "auth": ("api-user", "pwd"),
         "params": {"network_view": "default"},
         "data": None,
     }

@@ -174,6 +174,14 @@ class GetSystemInfoSummary(ActionOutput):
 
 def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams) -> dict[str, Any]:
     hostname = params.ip_hostname
+    if not (is_address(hostname) or is_ipv6(hostname)) and len(hostname) > 253:
+        return {
+            "success": False,
+            "message": "Hostname must not exceed 253 characters",
+            "data": [],
+            "summary": {},
+        }
+
     # Params already supplies the legacy default when the input is omitted.
     # Keep an explicitly supplied None intact, as the legacy connector did.
     network_view = params.network_view

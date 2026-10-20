@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
+from soar_sdk.auth import BasicAuth
 from soar_sdk.logging import getLogger
 
 from .consts import (
@@ -82,7 +83,7 @@ class InfobloxClient:
 
     def __init__(self, asset: Any, session: httpx.Client | None = None) -> None:
         self.base_url = f"{asset.url.rstrip('/')}{INFOBLOX_BASE_ENDPOINT}"
-        self.auth = (asset.username, asset.password)
+        self.auth = BasicAuth(asset.username, asset.password)
         self.verify_ssl = asset.verify_server_cert if asset.verify_server_cert is not None else True
         # Requests has no default timeout and follows redirects for each request.
         self.session = session or httpx.Client(verify=self.verify_ssl, timeout=None, follow_redirects=True)
