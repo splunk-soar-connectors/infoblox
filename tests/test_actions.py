@@ -396,17 +396,25 @@ def test_get_system_info_preserves_types_and_has_no_time_filter(monkeypatch):
     assert soar.message == ""
 
 
-def test_get_system_info_static_host_and_empty_result_messages(monkeypatch):
+@pytest.mark.parametrize(
+    ("record_endpoint", "address_key", "address", "protocol"),
+    [
+        ("/record:a", "ipv4addr", "10.0.0.7", "IPV4"),
+        ("/record:aaaa", "ipv6addr", "2001:db8::7", "IPV6"),
+    ],
+    ids=["a_record", "aaaa_only_hostname"],
+)
+def test_get_system_info_static_host_and_empty_result_messages(monkeypatch, record_endpoint, address_key, address, protocol):
     class StaticClient(FakeClient):
         def wapi_request(self, endpoint, **kwargs):
             self.requests.append(("request", endpoint, kwargs))
             if endpoint == "/lease":
                 return ApiResponse([])
-            if endpoint == "/record:a":
+            if endpoint == record_endpoint:
                 return ApiResponse(
                     [
                         {
-                            "ipv4addr": "10.0.0.7",
+                            address_key: address,
                             "name": "static.example.com",
                             "zone": "example.com",
                             "discovered_data": {
@@ -431,8 +439,8 @@ def test_get_system_info_static_host_and_empty_result_messages(monkeypatch):
             "client_hostname": "static",
             "hardware": "aa:bb:cc:dd:ee:ff",
             "os": "Linux",
-            "address": "10.0.0.7",
-            "protocol": "IPV4",
+            "address": address,
+            "protocol": protocol,
         }
     ]
     assert result.get_summary() == {
@@ -440,6 +448,12 @@ def test_get_system_info_static_host_and_empty_result_messages(monkeypatch):
         "is_static_ip": True,
     }
     assert result.get_message() == ""
+
+    expected_endpoints = ["/lease", "/record:a"]
+    if record_endpoint == "/record:aaaa":
+        expected_endpoints.append("/record:aaaa")
+    assert [request[1] for request in client.requests] == expected_endpoints
+    assert client.requests[-1][2]["params"]["name~"] == "static"
 
     class EmptyClient(StaticClient):
         def wapi_request(self, endpoint, **kwargs):

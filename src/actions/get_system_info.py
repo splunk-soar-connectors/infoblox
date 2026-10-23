@@ -220,7 +220,7 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
                 INFOBLOX_PARAM_VIEW: INFOBLOX_NETWORK_VIEW_DEFAULT,
             }
         host_rows = client.wapi_request(host_endpoint, params=host_query, method="get").data
-        if not is_ipv4 and not is_ipv6 and not host_rows:
+        if not is_ipv4 and not hostname_is_ipv6 and not host_rows:
             host_query = {
                 INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_RECORD_AAAA_RETURN_FIELDS,
                 INFOBLOX_JSON_CONTEXT_NAME_SEARCH: hostname,
