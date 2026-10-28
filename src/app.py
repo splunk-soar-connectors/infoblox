@@ -55,10 +55,7 @@ def test_connectivity(soar: SOARClient, asset: Asset) -> None:
     try:
         client.logout()
     except InfobloxApiError as error:
-        # Legacy finalize returned an error when logout failed. Preserve a
-        # probe failure message, but report logout failure when the probe passed.
-        if outcome.get("success", False):
-            outcome = {**outcome, "success": False, "message": str(error)}
+        logger.error("Infoblox logout failed: %s", error)
     finally:
         client.close()
 

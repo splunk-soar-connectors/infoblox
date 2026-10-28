@@ -16,6 +16,7 @@ from __future__ import annotations
 import importlib
 import json
 import time
+from copy import deepcopy
 from pathlib import Path
 from typing import get_args, get_origin
 
@@ -102,6 +103,158 @@ def make_asset(**overrides):
     }
     values.update(overrides)
     return Asset.model_validate(values)
+
+
+def make_lease(**overrides):
+    values = {
+        "address": "192.0.2.1",
+        "hardware": "00:11:22:33:44:55",
+        "binding_state": "ACTIVE",
+        "never_ends": False,
+        "cltt": 1_700_000_000,
+        "starts": 1_700_000_000,
+        "ends": 1_700_000_100,
+    }
+    values.update(overrides)
+    return values
+
+
+@pytest.mark.parametrize("case", ["lease", "static_host", "network", "hosts_ipv4", "hosts_ipv6", "rpz"])
+def test_later_row_error_preserves_completed_rows_and_summary(monkeypatch, case):
+    client = FakeClient(None)
+    expected_summary = {}
+    if case == "lease":
+        action_id = "get_system_info"
+        params = GetSystemInfoParams(ip_hostname="192.0.2.1", network_view="other")
+        good = make_lease()
+        client.wapi_request = lambda endpoint, **kwargs: ApiResponse([deepcopy(good), make_lease(ends="bad timestamp")])
+        expected_row = {
+            **good,
+            **{key: time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(good[key])) for key in ("cltt", "starts", "ends")},
+        }
+        expected_summary = {"mac_address": good["hardware"], "binding_state": "ACTIVE", "never_ends": False, "is_static_ip": False}
+        expected_data = [expected_row]
+    elif case == "static_host":
+        action_id = "get_system_info"
+        params = GetSystemInfoParams(ip_hostname="static")
+        good = {"name": "static.example", "zone": "example", "ipv4addr": "192.0.2.1", "discovered_data": {"os": "Linux"}}
+        client.wapi_request = lambda endpoint, **kwargs: ApiResponse([] if endpoint == "/lease" else [good, {**good, "discovered_data": None}])
+        expected_data = [{"client_hostname": "static", "hardware": None, "os": "Linux", "address": "192.0.2.1", "protocol": "IPV4"}]
+        expected_summary = {"mac_address": None, "is_static_ip": True}
+    elif case == "network":
+        action_id = "get_network_info"
+        params = GetNetworkInfoParams(ip="192.0.2.1")
+        good = {"network": "192.0.2.0/24"}
+        client.paged_request = lambda endpoint, **kwargs: [good, {"network": "bad network"}]
+        expected_data = [good]
+    elif case in {"hosts_ipv4", "hosts_ipv6"}:
+        action_id = "list_hosts"
+        params = ListHostsParams()
+        good = {"ipv4addr": "192.0.2.1", "name": "host.example", "zone": "example"}
+        good_ipv6 = {"ipv6addr": "2001:db8::1", "name": "v6.example", "zone": "example"}
+
+        def paged(endpoint, **kwargs):
+            if endpoint == "/record:a":
+                return [good, {}] if case == "hosts_ipv4" else [good]
+            return [good_ipv6, {}]
+
+        client.paged_request = paged
+        expected_data = [{"ip": "192.0.2.1", "name": "host", "zone": "example"}]
+        if case == "hosts_ipv6":
+            expected_data.append({"ip": "2001:db8::1", "name": "v6", "zone": "example"})
+    else:
+        action_id = "list_rpz"
+        params = ListRpzParams()
+        timestamp = 1_700_000_000
+        client.rpz_details = lambda *args, **kwargs: [
+            {"fqdn": "good.example", "rpz_last_updated_time": timestamp},
+            {"fqdn": "bad.example", "rpz_last_updated_time": "bad timestamp"},
+        ]
+        expected_data = [{"fqdn": "good.example", "rpz_last_updated_time": time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(timestamp))}]
+        expected_summary = {"total_response_policy_zones": 2}
+
+    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
+    soar = FakeSoar()
+    before = len(sdk.app.actions_manager.get_results())
+    assert sdk.app.actions_manager.get_action(action_id)(params, soar=soar, asset=make_asset()) is False
+    result = sdk.app.actions_manager.get_results()[before]
+    assert result.get_data() == expected_data
+    assert result.get_summary() == expected_summary
+    assert soar.get_summary().model_dump(exclude_unset=True) == expected_summary
+    assert result.get_message().startswith("Exception occurred. Error message:")
+    assert client.logout_called and client.closed
+
+
+@pytest.mark.parametrize(
+    ("address", "address_key", "other_address", "endpoint"),
+    [
+        ("192.0.2.1", "ipv4addr", "192.0.2.99", "/record:a"),
+        ("2001:db8::1", "ipv6addr", "2001:db8::99", "/record:aaaa"),
+    ],
+)
+def test_lease_enrichment_accepts_single_address_family_records(monkeypatch, address, address_key, other_address, endpoint):
+    client = FakeClient(None)
+
+    def request(path, **kwargs):
+        client.requests.append(path)
+        if path == "/lease":
+            return ApiResponse([make_lease(address=address)])
+        return ApiResponse(
+            [
+                {address_key: other_address, "discovered_data": {"os": "Wrong host"}},
+                {address_key: address, "discovered_data": {"os": "Linux"}},
+            ]
+        )
+
+    client.wapi_request = request
+    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
+    before = len(sdk.app.actions_manager.get_results())
+    assert (
+        sdk.app.actions_manager.get_action("get_system_info")(GetSystemInfoParams(ip_hostname=address), soar=FakeSoar(), asset=make_asset())
+        is True
+    )
+    result = sdk.app.actions_manager.get_results()[before]
+    assert result.get_data()[0]["os"] == "Linux"
+    assert result.get_data()[0]["address"] == address
+    assert result.get_summary()["is_static_ip"] is False
+    assert client.requests == ["/lease", endpoint]
+
+
+@pytest.mark.parametrize("business_failure", [False, True])
+def test_logout_failure_does_not_rewrite_business_result(monkeypatch, business_failure):
+    client = FakeClient(None)
+    client.rpz_details = lambda *args, **kwargs: [{"rpz_policy": "GIVEN"}]
+    logged_errors = []
+
+    def request(endpoint, **kwargs):
+        client.requests.append(kwargs["method"])
+        if business_failure:
+            raise InfobloxApiError("Business request failed")
+        return ApiResponse("created-ref" if kwargs["method"] == "post" else [])
+
+    def logout():
+        client.logout_called = True
+        raise InfobloxApiError("Logout failed")
+
+    client.wapi_request = request
+    client.logout = logout
+    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
+    monkeypatch.setattr(action_common.logger, "error", lambda *args: logged_errors.append(args))
+    soar = FakeSoar()
+    before = len(sdk.app.actions_manager.get_results())
+    assert (
+        sdk.app.actions_manager.get_action("block_ip")(BlockIpParams(ip="192.0.2.1", rp_zone="block.example"), soar=soar, asset=make_asset())
+        is not business_failure
+    )
+    result = sdk.app.actions_manager.get_results()[before]
+    assert result.get_status() is not business_failure
+    assert result.get_message() == ("Business request failed" if business_failure else "IP/CIDR blocked successfully")
+    assert result.get_data() == ([] if business_failure else [{"reference_link": "created-ref"}])
+    assert soar.get_message() == result.get_message()
+    assert client.requests == ([("cookie",), "get"] if business_failure else [("cookie",), "get", "post"])
+    assert logged_errors[0][0] == "Infoblox logout failed: %s"
+    assert str(logged_errors[0][1]) == "Logout failed"
+    assert client.logout_called and client.closed
 
 
 def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook():
@@ -678,6 +831,32 @@ def test_sdk_test_connectivity_hook_reports_probe_failure(monkeypatch):
     assert action(soar=FakeSoar()) is False
     result = sdk.app.actions_manager.get_results()[-1]
     assert result.get_message().endswith("Connectivity test failed")
+    assert client.logout_called and client.closed
+
+
+@pytest.mark.parametrize("probe_failure", [False, True])
+def test_connectivity_logout_failure_preserves_probe_result(monkeypatch, probe_failure):
+    client = FakeClient(None)
+
+    def request(*args, **kwargs):
+        if probe_failure:
+            raise InfobloxApiError("Probe failed")
+        return ApiResponse({})
+
+    def logout():
+        client.logout_called = True
+        raise InfobloxApiError("Logout failed")
+
+    client.wapi_request = request
+    client.logout = logout
+    monkeypatch.setattr(sdk, "InfobloxClient", lambda asset: client)
+    monkeypatch.setattr(sdk.app, "_build_magic_args", lambda function, *, soar: {"soar": soar, "asset": make_asset()})
+
+    before = len(sdk.app.actions_manager.get_results())
+    assert sdk.app.actions_manager.get_action("test_connectivity")(soar=FakeSoar()) is not probe_failure
+    result = sdk.app.actions_manager.get_results()[before]
+    expected_message = "Connectivity test failed" if probe_failure else "Test connectivity successful"
+    assert result.get_message().endswith(expected_message)
     assert client.logout_called and client.closed
 
 

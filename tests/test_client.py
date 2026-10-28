@@ -110,6 +110,39 @@ def test_verify_server_cert_is_optional_and_defaults_to_verification():
     client.close()
 
 
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"view": None, "network_view": None, "empty": "", "enabled": False, "offset": 0, "name": ["default", None, "other"]},
+        [
+            ("view", None),
+            ("network_view", None),
+            ("empty", ""),
+            ("enabled", False),
+            ("offset", 0),
+            ("name", "default"),
+            ("name", None),
+            ("name", "other"),
+        ],
+    ],
+    ids=["mapping", "repeated_pairs"],
+)
+def test_request_omits_null_query_values_without_losing_explicit_values(params):
+    original = deepcopy(params)
+    queries = []
+
+    def respond(request):
+        queries.append(request.url.params.multi_items())
+        return httpx.Response(200, json=[])
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as session:
+        client = InfobloxClient(Asset(), session=session)
+        client.request("/zone_rp", method="get", params=params)
+
+    assert params == original
+    assert queries == [[("empty", ""), ("enabled", "false"), ("offset", "0"), ("name", "default"), ("name", "other")]]
+
+
 def test_action_tls_override_uses_a_client_with_requested_verification(monkeypatch):
     created_clients = []
 

@@ -93,6 +93,21 @@ def action_result(
     return result
 
 
+def failed_outcome(
+    error: Exception,
+    *,
+    data: list[dict[str, Any]] | None = None,
+    summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Report failure while retaining rows and summary fields already completed."""
+    if isinstance(error, InfobloxApiError):
+        message = str(error)
+    else:
+        logger.exception("Unexpected Infoblox action failure")
+        message = f"Exception occurred. {exception_message(error)}"
+    return {"success": False, "message": message, "data": data or [], "summary": summary or {}}
+
+
 def run_action(
     params: Params,
     asset: Asset,
@@ -104,31 +119,13 @@ def run_action(
     client = InfobloxClient(asset)
     try:
         outcome = handler(client, params, **handler_kwargs)
-    except InfobloxApiError as error:
-        outcome = {
-            "success": False,
-            "message": str(error),
-            "data": [],
-            "summary": {},
-        }
     except Exception as error:
-        logger.exception("Unexpected Infoblox action failure")
-        outcome = {
-            "success": False,
-            "message": f"Exception occurred. {exception_message(error)}",
-            "data": [],
-            "summary": {},
-        }
+        outcome = failed_outcome(error)
 
     try:
         client.logout()
     except InfobloxApiError as error:
-        if outcome.get("success", True):
-            outcome = {
-                **outcome,
-                "success": False,
-                "message": str(error),
-            }
+        logger.error("Infoblox logout failed: %s", error)
     finally:
         client.close()
 

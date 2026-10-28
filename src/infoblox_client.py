@@ -103,6 +103,15 @@ class InfobloxClient:
         if getattr(self.session, method.lower(), None) is None:
             raise InfobloxApiError(f"Unsupported method {method}")
 
+        if isinstance(params, dict):
+            params = {
+                key: [item for item in value if item is not None] if isinstance(value, list | tuple) else value
+                for key, value in params.items()
+                if value is not None
+            }
+        elif isinstance(params, list | tuple):
+            params = [(key, value) for key, value in params if value is not None]
+
         request_kwargs: dict[str, Any] = {
             "auth": self.auth,
             "params": params,

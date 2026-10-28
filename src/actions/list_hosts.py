@@ -33,8 +33,8 @@ from ..consts import (
     INFOBLOX_RECORDS_IPv4_ENDPOINT,
     INFOBLOX_RECORDS_IPv6_ENDPOINT,
 )
-from ..infoblox_client import InfobloxApiError, InfobloxClient
-from .common import run_action
+from ..infoblox_client import InfobloxClient
+from .common import failed_outcome, run_action
 
 
 class DiscoveredDataOutput(ActionOutput):
@@ -75,34 +75,27 @@ def _list_hosts_handler(client: InfobloxClient, _params: Params) -> dict[str, An
         method="get",
     )
     rows: list[dict[str, Any]] = []
-    for host in ipv4:
-        host[INFOBLOX_JSON_IP] = host.pop(INFOBLOX_JSON_A_IP)
-        zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
-        if host[INFOBLOX_JSON_RECORD_NAME].endswith(zone_suffix):
-            host[INFOBLOX_JSON_RECORD_NAME] = host[INFOBLOX_JSON_RECORD_NAME][: -len(zone_suffix)]
-        rows.append(host)
-
     try:
+        for host in ipv4:
+            host[INFOBLOX_JSON_IP] = host.pop(INFOBLOX_JSON_A_IP)
+            zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
+            if host[INFOBLOX_JSON_RECORD_NAME].endswith(zone_suffix):
+                host[INFOBLOX_JSON_RECORD_NAME] = host[INFOBLOX_JSON_RECORD_NAME][: -len(zone_suffix)]
+            rows.append(host)
+
         ipv6 = client.paged_request(
             INFOBLOX_RECORDS_IPv6_ENDPOINT,
             params={INFOBLOX_JSON_RETURN_FIELDS: INFOBLOX_HOST_IPV6_RETURN_FIELDS},
             method="get",
         )
-    except InfobloxApiError as error:
-        # Legacy adds IPv4 rows before requesting IPv6, so those rows remain
-        # available if the IPv6 request fails.
-        return {
-            "success": False,
-            "message": str(error),
-            "data": rows,
-            "summary": {},
-        }
-    for host in ipv6:
-        host[INFOBLOX_JSON_IP] = host.pop(INFOBLOX_JSON_AAAA_IP)
-        zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
-        if host[INFOBLOX_JSON_RECORD_NAME].endswith(zone_suffix):
-            host[INFOBLOX_JSON_RECORD_NAME] = host[INFOBLOX_JSON_RECORD_NAME][: -len(zone_suffix)]
-        rows.append(host)
+        for host in ipv6:
+            host[INFOBLOX_JSON_IP] = host.pop(INFOBLOX_JSON_AAAA_IP)
+            zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
+            if host[INFOBLOX_JSON_RECORD_NAME].endswith(zone_suffix):
+                host[INFOBLOX_JSON_RECORD_NAME] = host[INFOBLOX_JSON_RECORD_NAME][: -len(zone_suffix)]
+            rows.append(host)
+    except Exception as error:
+        return failed_outcome(error, data=rows)
 
     total = len(ipv4) + len(ipv6)
     return {

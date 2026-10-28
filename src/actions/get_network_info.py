@@ -28,7 +28,7 @@ from ..consts import (
     INFOBLOX_NETWORK_ENDPOINT,
 )
 from ..infoblox_client import InfobloxClient
-from .common import action_result, is_ip, run_action
+from .common import action_result, failed_outcome, is_ip, run_action
 
 
 class GetNetworkInfoParams(Params):
@@ -82,12 +82,15 @@ def _get_network_info_handler(client: InfobloxClient, params: GetNetworkInfoPara
 
     rows = client.paged_request(INFOBLOX_NETWORK_ENDPOINT, params=query, method="get")
     matching_rows: list[dict[str, Any]] = []
-    for row in rows:
-        if search_ip:
-            if ipaddress.ip_address(search_ip) in ipaddress.ip_network(row.get("network")):
+    try:
+        for row in rows:
+            if search_ip:
+                if ipaddress.ip_address(search_ip) in ipaddress.ip_network(row.get("network")):
+                    matching_rows.append(row)
+            else:
                 matching_rows.append(row)
-        else:
-            matching_rows.append(row)
+    except Exception as error:
+        return failed_outcome(error, data=matching_rows)
 
     total = len(matching_rows)
     return {

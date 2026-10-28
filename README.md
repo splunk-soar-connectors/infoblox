@@ -12,6 +12,11 @@ This app supports various containment and investigative actions on Infoblox Grid
 
 Lease and RPZ last-updated timestamps are displayed in the local timezone of the SOAR worker.
 
+### SDK migration notes
+
+Test connectivity's success message changed from "Connectivity test succeeded" to "Test connectivity successful".
+Update tests or playbooks that compare the exact message; checking the action's success status is preferable.
+
 ### Configuration variables
 
 This table lists the configuration variables required to operate Infoblox DDI. These variables are specified when configuring a Infoblox DDI asset in Splunk SOAR.

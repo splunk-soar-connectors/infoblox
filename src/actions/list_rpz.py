@@ -32,7 +32,7 @@ from ..consts import (
     INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES,
 )
 from ..infoblox_client import InfobloxClient
-from .common import run_action
+from .common import failed_outcome, run_action
 
 
 class ListRpzParams(Params):
@@ -89,14 +89,19 @@ def _list_rpz_handler(client: InfobloxClient, params: ListRpzParams) -> dict[str
             "success": False,
             "message": rows.get(INFOBLOX_JSON_ERROR_MESSAGE, INFOBLOX_LIST_RPZ_NON_DEF_MESSAGE),
         }
-    total = len(rows)
-    for row in rows:
-        if row.get(INFOBLOX_LAST_UPDATED_TIME):
-            row[INFOBLOX_LAST_UPDATED_TIME] = time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(row[INFOBLOX_LAST_UPDATED_TIME]))
+    summary = {INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES: len(rows)}
+    completed_rows: list[dict[str, Any]] = []
+    try:
+        for row in rows:
+            if row.get(INFOBLOX_LAST_UPDATED_TIME):
+                row[INFOBLOX_LAST_UPDATED_TIME] = time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(row[INFOBLOX_LAST_UPDATED_TIME]))
+            completed_rows.append(row)
+    except Exception as error:
+        return failed_outcome(error, data=completed_rows, summary=summary)
     return {
         "success": True,
-        "data": rows,
-        "summary": {INFOBLOX_TOTAL_RESPONSE_POLICY_ZONES: total},
+        "data": completed_rows,
+        "summary": summary,
     }
 
 

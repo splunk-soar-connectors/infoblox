@@ -59,7 +59,7 @@ from ..consts import (
     INFOBLOX_RECORDS_IPv6_ENDPOINT,
 )
 from ..infoblox_client import InfobloxClient
-from .common import is_address, is_ipv6, run_action
+from .common import failed_outcome, is_address, is_ipv6, run_action
 
 
 _TABLE_COLUMN_ORDERS = {
@@ -238,54 +238,54 @@ def _get_system_info_handler(client: InfobloxClient, params: GetSystemInfoParams
 
     data: list[dict[str, Any]] = []
     summary: dict[str, Any] = {}
-    if not lease_rows and host_rows:
-        for host in host_rows:
-            name = host[INFOBLOX_JSON_RECORD_NAME]
-            zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
-            if name.endswith(zone_suffix):
-                name = name[: -len(zone_suffix)]
-            if not (is_address(hostname) or is_ipv6(hostname)) and name != hostname:
-                continue
-            # Match legacy get(..., {}) semantics: a missing field is empty,
-            # while an explicitly malformed None value still raises on .get.
-            discovered = host.get(INFOBLOX_JSON_DISCOVERED_DATA, {})
-            item: dict[str, Any] = {
-                INFOBLOX_JSON_CLIENT_HOSTNAME: name,
-                INFOBLOX_JSON_HARDWARE: discovered.get(INFOBLOX_JSON_MAC_ADDRESS),
-                INFOBLOX_JSON_OS: discovered.get(INFOBLOX_JSON_OS),
-                INFOBLOX_JSON_ADDRESS: host.get(INFOBLOX_JSON_A_IP, host.get(INFOBLOX_JSON_AAAA_IP)),
-            }
-            if host.get(INFOBLOX_JSON_A_IP) and is_address(host[INFOBLOX_JSON_A_IP]):
-                item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV4
-            elif host.get(INFOBLOX_JSON_AAAA_IP) and is_address(host[INFOBLOX_JSON_AAAA_IP]):
-                item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV6
-            summary[INFOBLOX_JSON_MAC_ADDRESS] = item[INFOBLOX_JSON_HARDWARE]
-            summary[INFOBLOX_JSON_IS_STATIC_IP] = True
-            data.append(item)
+    try:
+        if not lease_rows and host_rows:
+            for host in host_rows:
+                name = host[INFOBLOX_JSON_RECORD_NAME]
+                zone_suffix = f".{host[INFOBLOX_PARAM_ZONE]}"
+                if name.endswith(zone_suffix):
+                    name = name[: -len(zone_suffix)]
+                if not (is_address(hostname) or is_ipv6(hostname)) and name != hostname:
+                    continue
+                # Match legacy get(..., {}) semantics: a missing field is empty,
+                # while an explicitly malformed None value still raises on .get.
+                discovered = host.get(INFOBLOX_JSON_DISCOVERED_DATA, {})
+                item: dict[str, Any] = {
+                    INFOBLOX_JSON_CLIENT_HOSTNAME: name,
+                    INFOBLOX_JSON_HARDWARE: discovered.get(INFOBLOX_JSON_MAC_ADDRESS),
+                    INFOBLOX_JSON_OS: discovered.get(INFOBLOX_JSON_OS),
+                    INFOBLOX_JSON_ADDRESS: host.get(INFOBLOX_JSON_A_IP, host.get(INFOBLOX_JSON_AAAA_IP)),
+                }
+                if host.get(INFOBLOX_JSON_A_IP) and is_address(host[INFOBLOX_JSON_A_IP]):
+                    item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV4
+                elif host.get(INFOBLOX_JSON_AAAA_IP) and is_address(host[INFOBLOX_JSON_AAAA_IP]):
+                    item[INFOBLOX_JSON_PROTOCOL] = INFOBLOX_PROTOCOL_IPV6
+                summary[INFOBLOX_JSON_MAC_ADDRESS] = item[INFOBLOX_JSON_HARDWARE]
+                summary[INFOBLOX_JSON_IS_STATIC_IP] = True
+                data.append(item)
 
-    for lease in lease_rows:
-        if host_rows:
-            matching_host = next(
-                (
-                    host
-                    for host in host_rows
-                    if host[INFOBLOX_JSON_A_IP] == lease[INFOBLOX_JSON_ADDRESS] or host[INFOBLOX_JSON_AAAA_IP] == lease[INFOBLOX_JSON_ADDRESS]
-                ),
-                None,
-            )
-            if matching_host:
-                lease[INFOBLOX_JSON_OS] = matching_host.get(INFOBLOX_JSON_DISCOVERED_DATA, {}).get(INFOBLOX_JSON_OS)
-        for time_key in (INFOBLOX_JSON_CLTT, INFOBLOX_JSON_STARTS, INFOBLOX_JSON_ENDS):
-            lease[time_key] = time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(lease[time_key]))
-        summary.update(
-            {
-                INFOBLOX_JSON_MAC_ADDRESS: lease[INFOBLOX_JSON_HARDWARE],
-                INFOBLOX_JSON_BINDING_STATE: lease[INFOBLOX_JSON_BINDING_STATE],
-                INFOBLOX_JSON_NEVER_ENDS: lease[INFOBLOX_JSON_NEVER_ENDS],
-                INFOBLOX_JSON_IS_STATIC_IP: False,
-            }
-        )
-        data.append(lease)
+        for lease in lease_rows:
+            if host_rows:
+                matching_host = next(
+                    (
+                        host
+                        for host in host_rows
+                        if host.get(INFOBLOX_JSON_A_IP) == lease[INFOBLOX_JSON_ADDRESS]
+                        or host.get(INFOBLOX_JSON_AAAA_IP) == lease[INFOBLOX_JSON_ADDRESS]
+                    ),
+                    None,
+                )
+                if matching_host:
+                    lease[INFOBLOX_JSON_OS] = matching_host.get(INFOBLOX_JSON_DISCOVERED_DATA, {}).get(INFOBLOX_JSON_OS)
+            for time_key in (INFOBLOX_JSON_CLTT, INFOBLOX_JSON_STARTS, INFOBLOX_JSON_ENDS):
+                lease[time_key] = time.strftime(INFOBLOX_JSON_DATE_FORMAT, time.localtime(lease[time_key]))
+            summary[INFOBLOX_JSON_MAC_ADDRESS] = lease[INFOBLOX_JSON_HARDWARE]
+            summary[INFOBLOX_JSON_BINDING_STATE] = lease[INFOBLOX_JSON_BINDING_STATE]
+            summary[INFOBLOX_JSON_NEVER_ENDS] = lease[INFOBLOX_JSON_NEVER_ENDS]
+            summary[INFOBLOX_JSON_IS_STATIC_IP] = False
+            data.append(lease)
+    except Exception as error:
+        return failed_outcome(error, data=data, summary=summary)
 
     if not data:
         return {
