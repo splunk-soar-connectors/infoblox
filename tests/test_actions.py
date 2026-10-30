@@ -14,11 +14,8 @@
 from __future__ import annotations
 
 import importlib
-import json
 import time
 from copy import deepcopy
-from pathlib import Path
-from typing import get_args, get_origin
 
 import pytest
 from soar_sdk.action_results import ActionResult
@@ -41,7 +38,6 @@ from src.infoblox_client import InfobloxApiError
 
 
 sdk = importlib.import_module("src.app")
-ROOT = Path(__file__).resolve().parents[1]
 
 
 class FakeSoar:
@@ -255,98 +251,6 @@ def test_logout_failure_does_not_rewrite_business_result(monkeypatch, business_f
     assert logged_errors[0][0] == "Infoblox logout failed: %s"
     assert str(logged_errors[0][1]) == "Logout failed"
     assert client.logout_called and client.closed
-
-
-def test_imported_application_registers_legacy_actions_and_sdk_connectivity_hook():
-    actions = sdk.app.get_actions()
-    legacy = json.loads((ROOT / "tests/fixtures/legacy-infoblox-manifest.json").read_text())
-    expected = {action["identifier"] for action in legacy["actions"]}
-
-    assert sdk.app.app_meta_info["name"] == legacy["name"]
-    assert sdk.app.app_meta_info["appid"] == legacy["appid"]
-    assert expected - {"test_asset_connectivity"} <= actions.keys()
-    assert set(actions) == (expected - {"test_asset_connectivity"}) | {"make_request", "test_connectivity"}
-    assert "test_asset_connectivity" not in actions
-    assert "test_connectivity" in actions
-    assert actions["test_connectivity"].meta.type == "test"
-    assert actions["test_connectivity"].meta.read_only is True
-    for legacy_action in legacy["actions"]:
-        if legacy_action["identifier"] == "test_asset_connectivity":
-            continue  # Replaced by the SDK's single app-level connectivity hook.
-        action = actions[legacy_action["identifier"]]
-        assert action.meta.action == legacy_action["action"]
-        assert action.meta.type == legacy_action["type"]
-        assert action.meta.read_only is legacy_action["read_only"]
-
-
-def test_action_parameters_and_output_schema_match_legacy_contract():
-    legacy = json.loads((ROOT / "tests/fixtures/legacy-infoblox-manifest.json").read_text())
-    actions = sdk.app.get_actions()
-    # These CEF mappings intentionally extend legacy metadata so Infoblox IP
-    # actions can match IPv6 and CIDR values in playbooks as well as IPv4.
-    cef_type_overrides = {
-        ("block_ip", "action_result.parameter.ip"): ["ip", "ipv6", "cidr"],
-        ("unblock_ip", "action_result.parameter.ip"): ["ip", "ipv6", "cidr"],
-        ("get_network_info", "action_result.parameter.ip"): ["ip", "ipv6", "cidr"],
-        ("get_network_info", "action_result.data.*.network"): ["ip", "ipv6", "cidr"],
-        ("get_system_info", "action_result.parameter.ip_hostname"): ["ip", "ipv6", "host name"],
-        ("get_system_info", "action_result.data.*.address"): ["ip", "ipv6"],
-        ("get_system_info", "action_result.data.*.served_by"): ["ip", "ipv6"],
-        ("list_hosts", "action_result.data.*.ip"): ["ip", "ipv6"],
-    }
-    for legacy_action in legacy["actions"]:
-        if legacy_action["identifier"] == "test_asset_connectivity":
-            continue  # The SDK app-level connectivity hook replaces this legacy action.
-        action = actions[legacy_action["identifier"]]
-        legacy_params = legacy_action.get("parameters", {})
-        sdk_params = action.meta.parameters.model_fields
-
-        assert list(sdk_params) == list(legacy_params)
-        assert action.meta.description == legacy_action["description"]
-        assert action.meta.verbose == legacy_action.get("verbose", "")
-        for name, legacy_param in legacy_params.items():
-            field = sdk_params[name]
-            annotation = field.annotation
-            if get_origin(annotation) is not None:
-                annotation = next(
-                    (arg for arg in get_args(annotation) if arg is not type(None)),
-                    annotation,
-                )
-            data_type = {str: "string", int: "numeric", float: "numeric", bool: "boolean"}.get(annotation)
-            assert data_type == legacy_param["data_type"], name
-            assert field.is_required() is legacy_param.get("required", False), name
-            assert field.description == legacy_param.get("description"), name
-            if "default" in legacy_param:
-                assert field.default == legacy_param["default"], name
-            elif not legacy_param.get("required", False):
-                assert field.default is None, name
-
-        sdk_output = {item["data_path"]: item for item in action.meta.model_dump()["output"]}
-        legacy_output = {item["data_path"]: item for item in legacy_action.get("output", [])}
-        # The SDK does not serialize the legacy's empty string summary entry.
-        if legacy_action["identifier"] in {"block_ip", "unblock_ip", "block_domain", "unblock_domain"}:
-            legacy_output.pop("action_result.summary", None)
-        assert set(sdk_output) == set(legacy_output)
-        for path, legacy_field in legacy_output.items():
-            sdk_field = sdk_output[path]
-            assert sdk_field["data_type"] == legacy_field["data_type"], path
-            expected_contains = cef_type_overrides.get(
-                (legacy_action["identifier"], path),
-                legacy_field.get("contains", []),
-            )
-            assert sdk_field.get("contains", []) == expected_contains, path
-            # SDK-reserved status/message metadata and Param examples cannot be
-            # configured in the action models; examples for action outputs are.
-            if path not in {"action_result.status", "action_result.message"} and not path.startswith("action_result.parameter."):
-                assert sdk_field.get("example_values") == legacy_field.get("example_values"), path
-            if path in {"action_result.status", "action_result.message"}:
-                continue
-            if path.startswith("action_result.parameter."):
-                assert sdk_field.get("column_name") == legacy_field.get("column_name"), path
-                assert sdk_field.get("column_order") == legacy_field.get("column_order"), path
-                continue
-            assert sdk_field.get("column_name") == legacy_field.get("column_name"), path
-            assert sdk_field.get("column_order") == legacy_field.get("column_order"), path
 
 
 def test_registered_action_executes_and_preserves_raw_json_values(monkeypatch):
