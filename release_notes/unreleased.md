@@ -1,4 +1,5 @@
 **Unreleased**
 
-* Port Infoblox DDI to the Splunk SOAR SDK, preserve the legacy action contracts, add the SDK `make request` action, and use the SDK `test_connectivity` identifier for asset connectivity testing.
-* Test connectivity's success message is now "Test connectivity successful" instead of "Connectivity test succeeded"; update exact-message assertions.
+* Migrated the connector to the Splunk SOAR SDK, retaining existing action names and username/password asset configuration.
+* The minimum supported SOAR version is now 7.0.0 (previously 6.1.0), and Python 3.9 is no longer supported.
+* Added the `make request` action for authenticated requests to Infoblox WAPI paths.
