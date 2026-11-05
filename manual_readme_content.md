@@ -1,6 +1,6 @@
 ### Python compatibility
 
-Splunk SOAR SDK `7.1.2` requires Python `>=3.13,<3.16`, excluding `3.14.*` (Python 3.13 and 3.15).
+This app requires Python `>=3.13,<3.14` (Python 3.13) and uses Splunk SOAR SDK `7.1.2`.
 
 See the [SDK package requirements](https://pypi.org/project/splunk-soar-sdk/7.1.2/).
 
