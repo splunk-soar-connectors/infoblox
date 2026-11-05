@@ -18,7 +18,8 @@ import time
 from copy import deepcopy
 
 import pytest
-from soar_sdk.action_results import ActionResult
+from pydantic import ValidationError
+from soar_sdk.action_results import ActionOutput, ActionResult
 from soar_sdk.exceptions import ActionFailure
 
 from src.actions import common as action_common
@@ -253,7 +254,7 @@ def test_logout_failure_does_not_rewrite_business_result(monkeypatch, business_f
     assert client.logout_called and client.closed
 
 
-def test_registered_action_executes_and_preserves_raw_json_values(monkeypatch):
+def test_registered_network_view_action_executes_and_normalizes_output(monkeypatch):
     client = FakeClient(None)
     row = {
         "_ref": "networkview/one",
@@ -272,16 +273,130 @@ def test_registered_action_executes_and_preserves_raw_json_values(monkeypatch):
 
     assert isinstance(result, ActionResult)
     assert result.get_status() is True
-    assert result.get_data() == [row]
-    assert result.get_data()[0]["custom_object"] == {
-        "count": 3,
-        "active": True,
-        "empty": None,
-    }
+    assert result.get_data() == [{"_ref": "networkview/one", "name": "default", "is_default": False, "comment": None}]
     assert result.get_summary() == {"total_network_view": 1}
     assert soar.message == ""
     assert soar.summary.total_network_view == 1
     assert client.requests == [("paged", "/networkview", {"method": "get"})]
+    assert client.logout_called and client.closed
+
+
+@pytest.mark.parametrize("is_noop", [False, True])
+@pytest.mark.parametrize(
+    ("action_id", "params_class", "value"),
+    [
+        ("block_ip", BlockIpParams, {"ip": "192.0.2.1"}),
+        ("unblock_ip", UnblockIpParams, {"ip": "192.0.2.1"}),
+        ("block_domain", BlockDomainParams, {"domain": "host.example"}),
+        ("unblock_domain", UnblockDomainParams, {"domain": "host.example"}),
+    ],
+)
+def test_mutations_return_typed_outputs_and_preserve_empty_noops(monkeypatch, action_id, params_class, value, is_noop):
+    client = FakeClient(None)
+    client.rpz_details = lambda *args, **kwargs: [{"rpz_policy": "GIVEN"}]
+    is_block = action_id.startswith("block_")
+
+    def request(endpoint, **kwargs):
+        if kwargs.get("method") in {"post", "delete"} or "data" in kwargs:
+            return ApiResponse("changed-ref")
+        exists = is_noop if is_block else not is_noop
+        return ApiResponse([{"canonical": "", "_ref": "existing-ref"}] if exists else [])
+
+    client.wapi_request = request
+    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
+    params = params_class(**value, rp_zone="block.example")
+    soar = FakeSoar()
+    action = getattr(importlib.import_module(f"src.actions.{action_id}"), action_id)
+    outputs = action(params, soar=soar, asset=make_asset())
+
+    assert isinstance(outputs, list)
+    assert all(isinstance(output, ActionOutput) for output in outputs)
+    expected_data = [] if is_noop else [{"reference_link": "changed-ref"}]
+    assert [output.model_dump(by_alias=True) for output in outputs] == expected_data
+    assert soar.get_summary().model_dump() == {}
+
+    before = len(sdk.app.actions_manager.get_results())
+    expected_message = soar.get_message()
+    assert sdk.app.actions_manager.get_action(action_id)(params, soar=FakeSoar(), asset=make_asset()) is True
+    result = sdk.app.actions_manager.get_results()[before]
+    assert result.get_data() == expected_data
+    assert result.get_message() == expected_message
+    assert result.get_summary() == {}
+    assert result.get_param() == params.model_dump(exclude_unset=True, by_alias=True)
+    assert client.logout_called and client.closed
+
+
+@pytest.mark.parametrize("include_null", [False, True])
+def test_network_views_return_typed_outputs_with_sdk_normalization(monkeypatch, include_null):
+    client = FakeClient(None)
+    row = {"_ref": "networkview/one", "name": "default", "is_default": False, "nested": {"count": 3, "empty": None}}
+    if include_null:
+        row["comment"] = None
+    expected = {"_ref": "networkview/one", "name": "default", "is_default": False, "comment": None}
+    client.paged_request = lambda *args, **kwargs: [row]
+    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
+    module = importlib.import_module("src.actions.list_network_view")
+    soar = FakeSoar()
+    outputs = module.list_network_view(ListNetworkViewParams(), soar=soar, asset=make_asset())
+
+    assert len(outputs) == 1
+    assert isinstance(outputs[0], module.ListNetworkViewOutput)
+    assert outputs[0].model_dump(by_alias=True) == expected
+    assert soar.get_summary().model_dump() == {"total_network_view": 1}
+    assert ("comment" in row) is include_null
+    assert client.logout_called and client.closed
+
+    before = len(sdk.app.actions_manager.get_results())
+    assert sdk.app.actions_manager.get_action("list_network_view")(ListNetworkViewParams(), soar=FakeSoar(), asset=make_asset()) is True
+    result = sdk.app.actions_manager.get_results()[before]
+    assert result.get_data() == [expected]
+    assert result.get_summary() == {"total_network_view": 1}
+
+
+@pytest.mark.parametrize(
+    ("module_name", "output_class", "data", "field_name"),
+    [
+        ("block_domain", "BlockDomainOutput", {"reference_link": {"_ref": "created"}}, "reference_link"),
+        ("list_network_view", "ListNetworkViewOutput", {"name": {"value": "default"}}, "name"),
+        ("list_network_view", "ListNetworkViewOutput", {"is_default": "not-a-bool"}, "is_default"),
+    ],
+)
+def test_typed_outputs_reject_values_outside_documented_field_types(module_name, output_class, data, field_name):
+    output_type = getattr(importlib.import_module(f"src.actions.{module_name}"), output_class)
+    with pytest.raises(ValidationError) as error:
+        output_type(**data)
+    assert error.value.errors()[0]["loc"] == (field_name,)
+
+
+@pytest.mark.parametrize(
+    ("action_id", "params"),
+    [
+        ("block_ip", BlockIpParams(ip="192.0.2.1", rp_zone="block.example")),
+        ("unblock_ip", UnblockIpParams(ip="192.0.2.1", rp_zone="block.example")),
+        ("block_domain", BlockDomainParams(domain="host.example", rp_zone="block.example")),
+        ("unblock_domain", UnblockDomainParams(domain="host.example", rp_zone="block.example")),
+        ("list_network_view", ListNetworkViewParams()),
+    ],
+)
+def test_typed_action_failures_preserve_message_and_parameters(monkeypatch, action_id, params):
+    client = FakeClient(None)
+
+    def fail(*args, **kwargs):
+        raise InfobloxApiError("API failed Status code: 403 Detail: Forbidden")
+
+    client.rpz_details = fail
+    client.paged_request = fail
+    monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
+    before = len(sdk.app.actions_manager.get_results())
+    soar = FakeSoar()
+    assert sdk.app.actions_manager.get_action(action_id)(params, soar=soar, asset=make_asset()) is False
+    result = sdk.app.actions_manager.get_results()[before]
+    assert result.get_status() is False
+    assert result.get_data() == []
+    assert result.get_summary() == {}
+    assert result.get_message() == "API failed Status code: 403 Detail: Forbidden"
+    assert result.get_param() == params.model_dump(exclude_unset=True, by_alias=True)
+    assert soar.get_message() == result.get_message()
     assert client.logout_called and client.closed
 
 
@@ -381,7 +496,9 @@ def test_ip_parameters_fail_before_client_creation(monkeypatch, params_class, re
             lambda _asset: pytest.fail("invalid IP must fail before client creation"),
         )
         soar = FakeSoar()
-        result = action(params, soar=soar, asset=make_asset())
+        before = len(sdk.app.actions_manager.get_results())
+        assert sdk.app.actions_manager.get_action(action.__name__)(params, soar=soar, asset=make_asset()) is False
+        result = sdk.app.actions_manager.get_results()[before]
         assert not result.get_status()
         assert result.get_message() == "parameter 'ip' validation failed"
         assert soar.get_message() == "parameter 'ip' validation failed"
@@ -593,7 +710,7 @@ def test_rpz_actions_preserve_explicitly_empty_network_view(monkeypatch):
 
         def request(endpoint, **kwargs):
             request_calls.append((endpoint, kwargs))
-            return ApiResponse("created-ref" if kwargs.get("method") == "post" else [])
+            return ApiResponse("created-ref" if kwargs.get("method") == "post" or "data" in kwargs else [])
 
         client.wapi_request = request
         monkeypatch.setattr(action_common, "InfobloxClient", lambda asset: client)
@@ -609,7 +726,7 @@ def test_rpz_actions_preserve_explicitly_empty_network_view(monkeypatch):
             assert request_calls[1][1].get("params", request_calls[1][1].get("data"))["view"] == ""
 
 
-def test_block_domain_preserves_form_payload_and_nested_reference(monkeypatch):
+def test_block_domain_preserves_form_payload_and_reference_string(monkeypatch):
     client = FakeClient(None)
     rpz_calls = []
 
@@ -623,7 +740,7 @@ def test_block_domain_preserves_form_payload_and_nested_reference(monkeypatch):
     def request(endpoint, **kwargs):
         calls.append((endpoint, kwargs))
         if "data" in kwargs:
-            return ApiResponse({"_ref": "created", "details": {"id": 7}})
+            return ApiResponse("record:rpz:cname/created:xn--mnich-kva.example.block.example/default")
         return ApiResponse([])
 
     client.wapi_request = request
@@ -639,7 +756,7 @@ def test_block_domain_preserves_form_payload_and_nested_reference(monkeypatch):
     assert sdk.app.actions_manager.get_action("block_domain")(params, soar=soar, asset=make_asset()) is True
     result = sdk.app.actions_manager.get_results()[before]
     assert result.get_message() == "Domain blocked successfully"
-    assert result.get_data() == [{"reference_link": {"_ref": "created", "details": {"id": 7}}}]
+    assert result.get_data() == [{"reference_link": "record:rpz:cname/created:xn--mnich-kva.example.block.example/default"}]
     assert rpz_calls == [(({"fqdn": "block.example", "view": "default"},), {"allow_not_found": False})]
     assert calls == [
         (

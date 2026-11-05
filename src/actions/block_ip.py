@@ -18,13 +18,11 @@ from typing import Any
 from pydantic import model_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
-from soar_sdk.meta.actions import ActionMeta
 from soar_sdk.params import Param, Params
-from soar_sdk.types import Action
 
 from ..asset import Asset
 from ..consts import INFOBLOX_IP_VALIDATION_FAILED, INFOBLOX_NETWORK_VIEW_DEFAULT
-from .common import action_result, is_ip, run_action
+from .common import is_ip, run_action
 from .rpz import ip_rule_action
 
 
@@ -70,40 +68,18 @@ class BlockIpOutput(ActionOutput):
     )
 
 
-class BlockIpMeta(ActionMeta):
-    """Keep the legacy Block Status table column for the action message."""
-
-    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        metadata = super().model_dump(*args, **kwargs)
-        for field in metadata.get("output", []):
-            if field["data_path"] == "action_result.message":
-                field["column_name"] = "Block Status"
-                field["column_order"] = 3
-                field["example_values"] = ["IP/CIDR blocked successfully"]
-        return metadata
-
-
-def apply_table_column_metadata(action: Action) -> None:
-    """Apply this action's legacy status column metadata."""
-    meta = action.meta
-    action.meta = BlockIpMeta(**{name: getattr(meta, name) for name in ActionMeta.model_fields})
-
-
 def block_ip(params: BlockIpParams, soar: SOARClient, asset: Asset):
     if not is_ip(params.ip):
-        return action_result(
-            params,
-            soar,
-            ActionOutput,
-            success=False,
-            message=INFOBLOX_IP_VALIDATION_FAILED,
-        )
+        soar.set_message(INFOBLOX_IP_VALIDATION_FAILED)
+        soar.set_summary(ActionOutput())
+        return False, INFOBLOX_IP_VALIDATION_FAILED, params.model_dump(exclude_unset=True, by_alias=True)
     return run_action(
         params,
         asset,
         soar,
         ActionOutput,
         ip_rule_action,
+        output_type=BlockIpOutput,
         block=True,
         comment=params.comment,
     )

@@ -18,9 +18,7 @@ from typing import Any
 from pydantic import model_validator
 from soar_sdk.abstract import SOARClient
 from soar_sdk.action_results import ActionOutput, OutputField
-from soar_sdk.meta.actions import ActionMeta
 from soar_sdk.params import Param, Params
-from soar_sdk.types import Action
 
 from ..asset import Asset
 from ..consts import INFOBLOX_NETWORK_VIEW_DEFAULT
@@ -70,25 +68,6 @@ class BlockDomainOutput(ActionOutput):
     )
 
 
-class BlockDomainMeta(ActionMeta):
-    """Keep the legacy Block Status table column for the action message."""
-
-    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        metadata = super().model_dump(*args, **kwargs)
-        for field in metadata.get("output", []):
-            if field["data_path"] == "action_result.message":
-                field["column_name"] = "Block Status"
-                field["column_order"] = 3
-                field["example_values"] = ["Domain blocked successfully"]
-        return metadata
-
-
-def apply_table_column_metadata(action: Action) -> None:
-    """Apply this action's legacy status column metadata."""
-    meta = action.meta
-    action.meta = BlockDomainMeta(**{name: getattr(meta, name) for name in ActionMeta.model_fields})
-
-
 def block_domain(params: BlockDomainParams, soar: SOARClient, asset: Asset):
     return run_action(
         params,
@@ -96,6 +75,7 @@ def block_domain(params: BlockDomainParams, soar: SOARClient, asset: Asset):
         soar,
         ActionOutput,
         domain_rule_action,
+        output_type=BlockDomainOutput,
         block=True,
         comment=params.comment,
     )

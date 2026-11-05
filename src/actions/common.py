@@ -114,8 +114,10 @@ def run_action(
     soar: SOARClient,
     summary_type: type[ActionOutput],
     handler: Callable[..., dict[str, Any]],
+    *,
+    output_type: type[ActionOutput] | None = None,
     **handler_kwargs: Any,
-) -> ActionResult:
+) -> ActionResult | list[ActionOutput] | tuple[bool, str, dict[str, Any]]:
     client = InfobloxClient(asset)
     try:
         outcome = handler(client, params, **handler_kwargs)
@@ -129,4 +131,14 @@ def run_action(
     finally:
         client.close()
 
-    return action_result(params, soar, summary_type, **outcome)
+    if output_type is None:
+        return action_result(params, soar, summary_type, **outcome)
+
+    message = outcome.get("message", "")
+    soar.set_message(message)
+    soar.set_summary(summary_type(**outcome.get("summary", {})))
+    if not outcome.get("success", True):
+        # The SDK's native failure tuple preserves the message and parameters;
+        # ActionFailure would add a prefix and omit the original parameters.
+        return False, message, _params_dict(params)
+    return [output_type(**row) for row in outcome.get("data", [])]

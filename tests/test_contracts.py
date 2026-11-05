@@ -347,9 +347,7 @@ def test_action_parameters_and_output_schema_match_contract(identifier):
         assert field.get("contains", []) == contains, path
         # Status/message examples are SDK-owned; parameter examples are not
         # configurable in the parameter models. Preserve the other contracts.
-        if path in {"action_result.status", "action_result.message"}:
-            continue
-        if not path.startswith("action_result.parameter."):
+        if path not in {"action_result.status", "action_result.message"} and not path.startswith("action_result.parameter."):
             assert field.get("example_values") == examples, path
         assert field.get("column_name") == column_name, path
         assert field.get("column_order") == column_order, path

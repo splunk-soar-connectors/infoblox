@@ -192,7 +192,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
-action_result.message | string | | IP/CIDR blocked successfully |
+action_result.message | string | | |
 action_result.parameter.ip | string | `ip` `ipv6` `cidr` | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
@@ -223,7 +223,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
-action_result.message | string | | IP/CIDR unblocked successfully |
+action_result.message | string | | |
 action_result.parameter.ip | string | `ip` `ipv6` `cidr` | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
@@ -254,7 +254,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
-action_result.message | string | | Domain blocked successfully |
+action_result.message | string | | |
 action_result.parameter.domain | string | `domain` `url` | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |
@@ -285,7 +285,7 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 DATA PATH | TYPE | CONTAINS | EXAMPLE VALUES
 --------- | ---- | -------- | --------------
 action_result.status | string | | success failure |
-action_result.message | string | | Domain unblocked successfully |
+action_result.message | string | | |
 action_result.parameter.domain | string | `domain` `url` | |
 action_result.parameter.rp_zone | string | `infoblox rpz` | |
 action_result.parameter.network_view | string | `infoblox view` | |

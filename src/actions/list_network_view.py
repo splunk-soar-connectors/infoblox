@@ -64,4 +64,4 @@ def _list_network_view_handler(client: InfobloxClient, _params: Params) -> dict[
 
 
 def list_network_view(params: ListNetworkViewParams, soar: SOARClient, asset: Asset):
-    return run_action(params, asset, soar, ListNetworkViewSummary, _list_network_view_handler)
+    return run_action(params, asset, soar, ListNetworkViewSummary, _list_network_view_handler, output_type=ListNetworkViewOutput)
