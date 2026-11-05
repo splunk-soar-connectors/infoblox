@@ -8,6 +8,12 @@ Minimum Product Version: 7.0.0
 
 This app supports various containment and investigative actions on Infoblox Grid Manager
 
+### Python compatibility
+
+Splunk SOAR SDK `7.1.2` requires Python `>=3.13,<3.16`, excluding `3.14.*` (Python 3.13 and 3.15).
+
+See the [SDK package requirements](https://pypi.org/project/splunk-soar-sdk/7.1.2/).
+
 ### Additional behavior notes
 
 Lease and RPZ last-updated timestamps are displayed in the local timezone of the SOAR worker.
