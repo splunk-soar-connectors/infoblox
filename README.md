@@ -1,7 +1,7 @@
 # Infoblox DDI
 
 Publisher: Splunk <br>
-Connector Version: 3.0.0 <br>
+Connector Version: 3.0.1 <br>
 Product Vendor: Infoblox <br>
 Product Name: Infoblox DDI <br>
 Minimum Product Version: 7.0.0
